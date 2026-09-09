@@ -1,0 +1,13 @@
+const MODEL="gemini-3.1-flash-lite";
+async function call(key,body){const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":key},body:JSON.stringify(body)});let j={};try{j=await r.json()}catch{}return{r,j}}
+export default async function handler(req,res){
+ res.setHeader("Cache-Control","no-store");
+ if(req.method!=="POST")return res.status(405).json({ok:false,error:"POST only"});
+ const key=process.env.GEMINI_API_KEY;if(!key)return res.status(503).json({ok:false,error:"GEMINI_API_KEY missing"});
+ const query=String(req.body?.query||"").slice(0,300), analysis=req.body?.analysis||{}, books=Array.isArray(req.body?.books)?req.body.books.slice(0,80):[];
+ if(!query||!books.length)return res.status(400).json({ok:false,error:"invalid input"});
+ const schema={type:"object",properties:{matches:{type:"array",items:{type:"object",properties:{id:{type:"integer"},matched:{type:"boolean"},score:{type:"integer",minimum:0,maximum:100},reasons:{type:"array",items:{type:"string"}}},required:["id","matched","score","reasons"]}}},required:["matches"]};
+ const system=`너는 고등학교 도서관의 엄격한 도서 적합성 판정기다. 검색어를 새로 해석하지 말고 제공된 analysis.required_groups를 필수 AND 조건으로 사용한다. 각 책의 profile은 그 책의 의미프로필이다.\n규칙:\n- 필수조건 하나라도 profile 근거로 확인되지 않으면 matched=false. 비슷해 보인다는 이유로 추측하지 않는다.\n- material: fiction=소설, poetry=시, essay=에세이, nonfiction=비소설. nonfiction 안에 fiction 문자열이 들어간다는 식의 문자열 유사성은 절대 사용하지 않는다.\n- genre '로맨스'는 profile.genre에 로맨스/연애소설 등 실제 장르 근거가 있어야 한다. 사랑, 관계, 감정이 나온다는 것만으로 로맨스가 아니다.\n- topic '환경'은 기후위기, 생태, 환경오염, 환경변화, 지속가능성 등 환경 자체가 핵심/부주제인 경우만 인정한다. 단순 재난, 미래, 과학, 생물학은 환경이 아니다.\n- '건축 AND 정보기술'이면 건축과 정보기술/BIM/디지털설계/스마트건축/건축데이터 등의 연결이 모두 확인되어야 한다. 건축+수학, 건축+역사만으로 통과시키지 않는다.\n- 시+슬픔처럼 자료형과 정서가 함께 요구되면 둘 다 충족해야 한다.\n- 책이 부족해도 억지로 결과 수를 채우지 않는다. 0권도 정상이다.\n- reasons에는 실제 충족 근거만 1~3개 간결하게 쓴다. matched=false 책도 반드시 배열에 포함한다.`;
+ const compact=books.map(b=>({id:b.id,title:b.title,author:b.author,kdc:b.kdc,profile:b.profile}));
+ try{const {r,j}=await call(key,{systemInstruction:{parts:[{text:system}]},contents:[{role:"user",parts:[{text:JSON.stringify({query,required_groups:analysis.required_groups,books:compact})}]}],generationConfig:{responseMimeType:"application/json",responseSchema:schema,temperature:0,maxOutputTokens:6000}});if(!r.ok)return res.status(r.status).json({ok:false,error:j?.error?.message||"Gemini failed"});const text=j?.candidates?.[0]?.content?.parts?.map(p=>p.text||"").join("")||"";const parsed=JSON.parse(text);return res.status(200).json({ok:true,model:MODEL,matches:parsed.matches||[]})}catch(e){return res.status(500).json({ok:false,error:String(e?.message||e)})}
+}
