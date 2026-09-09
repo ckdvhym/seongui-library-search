@@ -1,5 +1,5 @@
 <!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>성의고 도서관 V4 AI 의미검색 실험</title>
+<title>성의고 도서관 V4.1 AI 엄격 의미검색 실험</title>
 <style>
 :root{--bg:#f6f7f5;--card:#fff;--line:#dedfda;--text:#1e211f;--muted:#68706b;--soft:#edf5ef}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,"Noto Sans KR",sans-serif}.wrap{max-width:1150px;margin:auto;padding:28px 18px 70px}
@@ -10,7 +10,7 @@ h1{font-size:29px;margin:0 0 7px}.lead{color:var(--muted);line-height:1.65}.pane
 .status{margin-top:10px;color:var(--muted);font-size:14px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:15px;margin-top:18px}.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px}.head{display:flex;gap:14px}.cover{width:91px;height:132px;object-fit:cover;background:#eee;border-radius:5px}.cover.ph{display:flex;align-items:center;justify-content:center;color:#999;font-size:12px}.title{font-size:19px;font-weight:750;line-height:1.35}.meta{font-size:13px;color:var(--muted);line-height:1.55;margin-top:6px}.badge{display:inline-block;background:#e9f5ec;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:700;margin-bottom:10px}.line{font-size:13px;line-height:1.7;margin-top:9px}.tag{display:inline-block;background:#f0f1ef;border-radius:999px;padding:4px 8px;margin:2px;font-size:12px}.intro{font-size:13px;line-height:1.65;margin-top:10px;color:#363a37}.more{border:0;background:none;padding:0;margin-top:8px;text-decoration:underline;cursor:pointer;color:#555}.no{background:#fff;border:1px solid var(--line);border-radius:16px;padding:25px;line-height:1.8;margin-top:18px}.warn{background:#fff5dc;border:1px solid #ead7a3;border-radius:12px;padding:11px 13px;margin-top:12px;font-size:14px;line-height:1.6}
 .small{font-size:12px;color:#777}@media(max-width:650px){.search{flex-direction:column}.search button{width:100%}.grid{grid-template-columns:1fr}}
 </style></head><body><div class="wrap">
-<h1>성의고 도서관 주제검색 · V4 AI 의미검색 실험</h1>
+<h1>성의고 도서관 주제검색 · V4.1 AI 엄격 의미검색 실험</h1>
 <div class="lead">이번 버전은 미리 등록한 검색어 목록보다 <b>학생이 입력한 문장의 뜻을 먼저 해석</b>합니다. 그 다음 자료형·장르·주제·교과·진로·정서를 분리해 60권 시험군의 도서 의미프로필과 비교합니다.</div>
 
 <div class="panel">
@@ -120,6 +120,17 @@ async function interpret(q){
  }catch(e){}
  return {analysis:fallbackAnalysis(q),ai:false,model:"fallback"};
 }
+async function verifyWithAI(query,analysis){
+ // V4.1: Gemini가 해석한 필수조건을 각 책에 다시 엄격하게 대조한다.
+ // 제목의 단어가 비슷하거나 "관계"가 있다는 이유만으로 장르/주제를 통과시키지 않는다.
+ const books=BASE.map((b,id)=>({id,title:b.title,author:b.author,kdc:b.kdc,profile:b.profile}));
+ try{
+  const r=await fetch("/api/verify-books",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({query,analysis,books})});
+  const j=await r.json();
+  if(r.ok&&j.ok&&Array.isArray(j.matches)) return {ok:true,matches:j.matches,model:j.model};
+ }catch(e){}
+ return {ok:false,matches:[]};
+}
 function renderInterpret(a,ai){
  const chips=[];
  for(const g of arr(a.required_groups)) chips.push(`${g.label} · ${axisLabel(g.axis)}`);
@@ -134,17 +145,29 @@ async function go(){
  const {analysis:a,ai,model}=await interpret(q);renderInterpret(a,ai);
  if(!a.understood || !arr(a.required_groups).length){
    document.querySelector("#status").textContent="검색어의 조건을 충분히 해석하지 못했습니다.";
-   document.querySelector("#results").innerHTML='<div class="no"><b>검색어를 제대로 이해하지 못했습니다.</b><br>이 경우를 “관련 도서 0권”으로 처리하지 않습니다. Gemini 연결 후 다시 시험해 주세요.</div>';return;
+   document.querySelector("#results").innerHTML='<div class="no"><b>검색어를 제대로 이해하지 못했습니다.</b><br>이 경우를 “관련 도서 0권”으로 처리하지 않습니다.</div>';return;
  }
- let rows=[];
- for(const b of BASE){const r=scoreBook(b,a);if(r)rows.push({b,...r})}
+ if(ai){
+   document.querySelector("#status").textContent=`Gemini ${model} · 60권의 실제 의미프로필에 필수조건을 엄격하게 대조하는 중…`;
+   const v=await verifyWithAI(q,a);
+   if(v.ok){
+     const rows=v.matches.filter(x=>x.matched===true && Number.isInteger(x.id) && BASE[x.id]).map(x=>({b:BASE[x.id],score:Math.max(0,Math.min(100,Number(x.score)||70)),why:arr(x.reasons)}));
+     rows.sort((x,y)=>y.score-x.score);
+     document.querySelector("#status").textContent=`Gemini ${model} · 필수조건 모두 충족 ${rows.length}권 (60권 시험군)`;
+     if(!rows.length){
+       document.querySelector("#results").innerHTML='<div class="no"><b>해석된 필수조건을 모두 충족하는 책이 60권 시험군에서는 없습니다.</b><br>조건 하나만 맞는 책을 억지로 섞지 않았습니다. 전체 장서에 책이 없다는 뜻은 아닙니다.</div>';return;
+     }
+     const shown=rows.slice(0,12);
+     document.querySelector("#results").innerHTML='<div class="grid">'+shown.map((x,i)=>card(x.b,x.score,x.why,i)).join("")+'</div>';
+     enrichRows(shown);return;
+   }
+ }
+ // AI 검증이 일시 실패한 경우에만 로컬 엄격 필터를 사용한다.
+ let rows=[];for(const b of BASE){const r=scoreBook(b,a);if(r)rows.push({b,...r})}
  rows.sort((x,y)=>y.score-x.score);rows=rows.slice(0,12);
- document.querySelector("#status").textContent=`${ai?"Gemini "+model:"기본 해석기"} · 조건 충족 ${rows.length}권 (60권 시험군)`;
- if(!rows.length){
-  document.querySelector("#results").innerHTML='<div class="no"><b>해석된 조건을 충족하는 책이 60권 시험군에서는 없습니다.</b><br>이번에는 “검색어를 이해하지 못함”과 “이해했지만 해당 책이 없음”을 구분합니다. 전체 장서에 책이 없다는 뜻은 아닙니다.</div>';return;
- }
- document.querySelector("#results").innerHTML='<div class="grid">'+rows.map((x,i)=>card(x.b,x.score,x.why,i)).join("")+'</div>';
- enrichRows(rows);
+ document.querySelector("#status").textContent=`로컬 엄격 필터 · 조건 충족 ${rows.length}권 (AI 책 검증 일시 실패)`;
+ if(!rows.length){document.querySelector("#results").innerHTML='<div class="no"><b>필수조건을 충족하는 책이 60권 시험군에서는 없습니다.</b></div>';return;}
+ document.querySelector("#results").innerHTML='<div class="grid">'+rows.map((x,i)=>card(x.b,x.score,x.why,i)).join("")+'</div>';enrichRows(rows);
 }
 function card(b,score,why,i){
  const p=b.profile||{}, e=cache[b.isbn]||{};
