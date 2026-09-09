@@ -1,48 +1,124 @@
-// Vercel Serverless Function: Gemini query interpreter
-// Environment variable required: GEMINI_API_KEY
+// Vercel Serverless Function: Gemini query interpreter + safe connection diagnostic
+// Required env var: GEMINI_API_KEY
 const MODEL = "gemini-2.5-flash-lite";
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    res.setHeader("Allow", "POST");
-    return res.status(405).json({ok:false,error:"POST only"});
-  }
-  const key = process.env.GEMINI_API_KEY;
-  if (!key) return res.status(503).json({ok:false,error:"GEMINI_API_KEY is not configured"});
-  const q = String(req.body?.query || "").trim();
-  if (!q || q.length > 300) return res.status(400).json({ok:false,error:"Invalid query"});
+function googleError(raw) {
+  return {
+    code: raw?.error?.code ?? null,
+    status: raw?.error?.status ?? null,
+    message: raw?.error?.message ?? "Unknown Gemini API error"
+  };
+}
 
+async function callGemini(key, body) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+  const r = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-goog-api-key": key
+    },
+    body: JSON.stringify(body)
+  });
+  let raw;
+  try { raw = await r.json(); }
+  catch { raw = { error: { message: `Non-JSON response (HTTP ${r.status})` } }; }
+  return { r, raw };
+}
+
+export default async function handler(req, res) {
+  res.setHeader("Cache-Control", "no-store");
+  const key = process.env.GEMINI_API_KEY;
+
+  // Browser-safe diagnostic. Never returns the API key.
+  if (req.method === "GET") {
+    if (!key) {
+      return res.status(503).json({
+        ok: false,
+        diagnostic: true,
+        keyConfigured: false,
+        model: MODEL,
+        error: "GEMINI_API_KEY is not configured in this deployment"
+      });
+    }
+
+    try {
+      const { r, raw } = await callGemini(key, {
+        contents: [{ role: "user", parts: [{ text: "Reply with exactly OK" }] }],
+        generationConfig: { temperature: 0, maxOutputTokens: 8 }
+      });
+      if (!r.ok) {
+        return res.status(r.status).json({
+          ok: false,
+          diagnostic: true,
+          keyConfigured: true,
+          model: MODEL,
+          httpStatus: r.status,
+          googleError: googleError(raw)
+        });
+      }
+      const text = raw?.candidates?.[0]?.content?.parts?.map(p => p.text || "").join("").trim() || "";
+      return res.status(200).json({
+        ok: true,
+        diagnostic: true,
+        keyConfigured: true,
+        model: MODEL,
+        geminiReachable: true,
+        reply: text
+      });
+    } catch (e) {
+      return res.status(500).json({
+        ok: false,
+        diagnostic: true,
+        keyConfigured: true,
+        model: MODEL,
+        error: String(e?.message || e)
+      });
+    }
+  }
+
+  if (req.method !== "POST") {
+    res.setHeader("Allow", "GET, POST");
+    return res.status(405).json({ ok: false, error: "GET or POST only" });
+  }
+
+  if (!key) return res.status(503).json({ ok: false, error: "GEMINI_API_KEY is not configured" });
+
+  const q = String(req.body?.query || "").trim();
+  if (!q || q.length > 300) return res.status(400).json({ ok: false, error: "Invalid query" });
+
+  // Current Gemini JSON Schema form: lowercase JSON Schema types.
   const schema = {
-    type:"OBJECT",
-    properties:{
-      understood:{type:"BOOLEAN"},
-      intent:{type:"STRING", enum:["topic","career","assignment","casual","author","title","mixed"]},
-      title_query:{type:"STRING"},
-      author_query:{type:"STRING"},
-      material_types:{type:"ARRAY",items:{type:"STRING"}},
-      genres:{type:"ARRAY",items:{type:"STRING"}},
-      primary_topics:{type:"ARRAY",items:{type:"STRING"}},
-      related_topics:{type:"ARRAY",items:{type:"STRING"}},
-      curriculum_fields:{type:"ARRAY",items:{type:"STRING"}},
-      career_fields:{type:"ARRAY",items:{type:"STRING"}},
-      emotions_tone:{type:"ARRAY",items:{type:"STRING"}},
-      audience:{type:"ARRAY",items:{type:"STRING"}},
-      exclusions:{type:"ARRAY",items:{type:"STRING"}},
-      required_groups:{
-        type:"ARRAY",
-        items:{
-          type:"OBJECT",
-          properties:{
-            label:{type:"STRING"},
-            terms:{type:"ARRAY",items:{type:"STRING"}},
-            axis:{type:"STRING", enum:["topic","material","genre","career","curriculum","emotion","author","title","audience"]}
+    type: "object",
+    properties: {
+      understood: { type: "boolean" },
+      intent: { type: "string", enum: ["topic", "career", "assignment", "casual", "author", "title", "mixed"] },
+      title_query: { type: "string" },
+      author_query: { type: "string" },
+      material_types: { type: "array", items: { type: "string" } },
+      genres: { type: "array", items: { type: "string" } },
+      primary_topics: { type: "array", items: { type: "string" } },
+      related_topics: { type: "array", items: { type: "string" } },
+      curriculum_fields: { type: "array", items: { type: "string" } },
+      career_fields: { type: "array", items: { type: "string" } },
+      emotions_tone: { type: "array", items: { type: "string" } },
+      audience: { type: "array", items: { type: "string" } },
+      exclusions: { type: "array", items: { type: "string" } },
+      required_groups: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            label: { type: "string" },
+            terms: { type: "array", items: { type: "string" } },
+            axis: { type: "string", enum: ["topic", "material", "genre", "career", "curriculum", "emotion", "author", "title", "audience"] }
           },
-          required:["label","terms","axis"]
+          required: ["label", "terms", "axis"]
         }
       },
-      explanation:{type:"STRING"}
+      explanation: { type: "string" }
     },
-    required:["understood","intent","title_query","author_query","material_types","genres","primary_topics","related_topics","curriculum_fields","career_fields","emotions_tone","audience","exclusions","required_groups","explanation"]
+    required: ["understood", "intent", "title_query", "author_query", "material_types", "genres", "primary_topics", "related_topics", "curriculum_fields", "career_fields", "emotions_tone", "audience", "exclusions", "required_groups", "explanation"]
   };
 
   const system = `너는 고등학교 도서관의 자연어 검색어 해석기다.
@@ -61,28 +137,44 @@ export default async function handler(req, res) {
 한국어로 간결하게 반환하라.`;
 
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
-    const r = await fetch(url, {
-      method:"POST",
-      headers:{"Content-Type":"application/json","x-goog-api-key":key},
-      body:JSON.stringify({
-        systemInstruction:{parts:[{text:system}]},
-        contents:[{role:"user",parts:[{text:q}]}],
-        generationConfig:{
-          responseMimeType:"application/json",
-          responseSchema:schema,
-          temperature:0.1,
-          maxOutputTokens:1400
-        }
-      })
+    const { r, raw } = await callGemini(key, {
+      systemInstruction: { parts: [{ text: system }] },
+      contents: [{ role: "user", parts: [{ text: q }] }],
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: schema,
+        temperature: 0.1,
+        maxOutputTokens: 1400
+      }
     });
-    const raw = await r.json();
-    if (!r.ok) return res.status(r.status).json({ok:false,error:"Gemini request failed",detail:raw});
-    const text = raw?.candidates?.[0]?.content?.parts?.map(p=>p.text||"").join("") || "";
-    const parsed = JSON.parse(text);
-    res.setHeader("Cache-Control","no-store");
-    return res.status(200).json({ok:true,model:MODEL,analysis:parsed});
+
+    if (!r.ok) {
+      return res.status(r.status).json({
+        ok: false,
+        error: "Gemini request failed",
+        model: MODEL,
+        httpStatus: r.status,
+        googleError: googleError(raw)
+      });
+    }
+
+    const text = raw?.candidates?.[0]?.content?.parts?.map(p => p.text || "").join("") || "";
+    if (!text) return res.status(502).json({ ok: false, error: "Gemini returned no text", model: MODEL });
+
+    let parsed;
+    try { parsed = JSON.parse(text); }
+    catch (e) {
+      return res.status(502).json({
+        ok: false,
+        error: "Gemini returned invalid JSON",
+        model: MODEL,
+        parseError: String(e?.message || e),
+        preview: text.slice(0, 500)
+      });
+    }
+
+    return res.status(200).json({ ok: true, model: MODEL, analysis: parsed });
   } catch (e) {
-    return res.status(500).json({ok:false,error:String(e?.message||e)});
+    return res.status(500).json({ ok: false, error: String(e?.message || e), model: MODEL });
   }
 }
