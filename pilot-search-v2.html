@@ -1,0 +1,229 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>성의고 도서관 V2 검색 실험</title>
+<style>
+body{font-family:system-ui,"Noto Sans KR",sans-serif;background:#f7f7f5;color:#202020;margin:0}.wrap{max-width:1120px;margin:auto;padding:28px 18px 60px}
+h1{font-size:28px;margin:0 0 8px}.sub{color:#666;line-height:1.55}.panel{background:white;border:1px solid #ddd;border-radius:14px;padding:18px;margin:18px 0}
+.row{display:flex;gap:8px;flex-wrap:wrap}input{flex:1;min-width:260px;padding:13px;border:1px solid #bbb;border-radius:10px;font-size:16px}
+button{border:0;border-radius:10px;padding:12px 15px;background:#161616;color:#fff;cursor:pointer}button.alt{background:#eee;color:#222}
+.status{font-size:14px;color:#555;margin-top:11px}.examples button{margin:4px 4px 0 0;padding:8px 10px;font-size:13px}
+.intent{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}.chip{background:#eef3ef;border-radius:999px;padding:5px 9px;font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(315px,1fr));gap:14px}.card{background:#fff;border:1px solid #ddd;border-radius:14px;padding:15px}
+.top{display:flex;gap:13px}img{width:82px;height:118px;object-fit:cover;background:#eee}.title{font-weight:700;font-size:18px;line-height:1.35}
+.meta{font-size:13px;color:#666;line-height:1.5;margin-top:5px}.tag{display:inline-block;background:#f0f0f0;padding:3px 7px;margin:2px;border-radius:999px;font-size:12px}
+.rel{display:inline-block;background:#eaf5ed;border-radius:999px;padding:4px 8px;font-size:12px;font-weight:700;margin-bottom:7px}
+.reason{font-size:13px;line-height:1.55;margin-top:9px}.warn{background:#fff8df;border:1px solid #e9d99b;border-radius:10px;padding:12px;line-height:1.55;font-size:14px}
+.noresult{background:#fff;border:1px solid #ddd;border-radius:14px;padding:24px;line-height:1.65}
+details{margin-top:10px}summary{cursor:pointer;font-weight:600}.text{font-size:13px;white-space:pre-wrap;line-height:1.6;max-height:220px;overflow:auto;margin-top:7px}
+</style></head><body><div class="wrap">
+<h1>성의고 도서관 주제검색 · V2 의미조합 실험</h1>
+<div class="sub">단순 키워드 합산을 버리고, 검색어를 <b>주제·자료형·목적·정서</b>로 나눈 뒤 필수조건을 모두 만족한 책만 보여주는 실험판입니다.</div>
+
+<div class="panel"><div class="warn">
+<b>이번 버전의 핵심</b><br>
+① 띄어쓰기와 기호 차이를 무시합니다. ② 한 개념을 관련 개념망으로 넓혀 봅니다.
+③ “소설”, “정보서” 같은 자료형은 필수조건으로 처리합니다.
+④ 조건을 만족하는 책이 없으면 억지로 다른 책을 채우지 않습니다.
+</div>
+<div class="row" style="margin-top:14px"><button onclick="loadAll()">60권 YES24 정보 불러오기</button><button class="alt" onclick="clearCache()">저장 정보 지우기</button></div>
+<div id="loadStatus" class="status">이전 실험에서 정보를 불러왔다면 브라우저에 남아 있을 수 있습니다.</div></div>
+
+<div class="panel">
+<div class="row"><input id="q" placeholder="예: 건축 진로인데 정보기술과 연결된 책" onkeydown="if(event.key==='Enter')searchNow()"><button onclick="searchNow()">검색 실험</button></div>
+<div class="examples">
+<button class="alt" onclick="setQ('건축 관련 진로인데 정보와 연결된 책')">건축 × 정보 × 진로</button>
+<button class="alt" onclick="setQ('건축 관련 소설')">건축 관련 소설</button>
+<button class="alt" onclick="setQ('슬픈 내용')">슬픈 내용</button>
+<button class="alt" onclick="setQ('환경 관련 소설')">환경 관련 소설</button>
+<button class="alt" onclick="setQ('약학이나 의료 진로에 도움 되는 책')">약학·의료 진로</button>
+<button class="alt" onclick="setQ('반전 있는 추리소설')">반전 추리소설</button>
+</div>
+<div id="intent" class="intent"></div><div id="status" class="status">검색어를 입력해보세요.</div></div>
+<div id="results" class="grid"></div>
+
+<script>
+const BASE=[{"title": "지구 끝의 온실", "author": "김초엽 지음", "publisher": "자이언트북스", "year": "2021", "isbn": "9791191824001", "copies": 2, "call": "813.7 김84ㅈ c.2", "location": "도서관", "tags": "문학 소설 SF 기후위기 환경 생태 미래 재난 상실 희망 인간관계"}, {"title": "천 개의 파랑", "author": "천선란 지음", "publisher": "허블", "year": "2021", "isbn": "9791190090261", "copies": 1, "call": "813.7 천54ㅊ", "location": "도서관", "tags": "문학 소설 SF 로봇 인공지능 기술 동물윤리 성장 슬픔 따뜻함 인간관계"}, {"title": "우리가 빛의 속도로 갈 수 없다면", "author": "김초엽 지음", "publisher": "허블", "year": "2019", "isbn": "9791190090018", "copies": 1, "call": "813.6 김84ㅇ c.2", "location": "도서관", "tags": "문학 소설 SF 우주 과학기술 인간 소외 상실 그리움 미래"}, {"title": "원통 안의 소녀", "author": "김초엽 지음;근하 그림", "publisher": "창비", "year": "2019", "isbn": "9788936459024", "copies": 1, "call": "813.6 김84ㅇ", "location": "도서관", "tags": "문학 소설 SF 환경 기술 청소년 미래 성장"}, {"title": "마션", "author": "앤디 위어 지음;박아람 옮김", "publisher": "RHK(알에이치코리아)", "year": "2021", "isbn": "9788925588650", "copies": 1, "call": "843 위64ㅁ", "location": "도서관", "tags": "문학 소설 SF 우주 화성 과학기술 생존 모험 유머"}, {"title": "아르테미스", "author": "앤디 위어 지음;남명성 옮김", "publisher": "RHK(알에이치코리아)", "year": "2021", "isbn": "9788925588711", "copies": 1, "call": "843 위64ㅇ", "location": "도서관", "tags": "문학 소설 SF 우주 달 과학기술 범죄 모험"}, {"title": "1984", "author": "조지 오웰 지음;박상곤 옮김", "publisher": "온스토리", "year": "2014", "isbn": "9788998934217", "copies": 1, "call": "808.9 온57 v.10", "location": "도서관", "tags": "문학 소설 디스토피아 정치 감시 권력 자유 사회 고전"}, {"title": "눈먼 자들의 도시", "author": "주제 사라마구 지음; 정영목 옮김", "publisher": "해냄출판사", "year": "2022", "isbn": "9788973374939", "copies": 1, "call": "879 사292ㄴ", "location": "신간도서", "tags": "문학 소설 재난 사회 인간성 윤리 폭력 고전 어두움"}, {"title": "채식주의자", "author": "한강 지음", "publisher": "창비", "year": "2022", "isbn": "9788936434595", "copies": 2, "call": "813.6 한12ㅊ c.2", "location": "도서관", "tags": "문학 소설 한강 인간 폭력 몸 욕망 가족 어두움"}, {"title": "작별하지 않는다", "author": "한강 지음", "publisher": "문학동네", "year": "2021", "isbn": "9788954682152", "copies": 2, "call": "813.7 한12ㅈ c.2", "location": "도서관", "tags": "문학 소설 한강 역사 제주 기억 국가폭력 상실 슬픔"}, {"title": "아몬드", "author": "손원평 지음", "publisher": "다즐링", "year": "2023", "isbn": "9791198363510", "copies": 4, "call": "813.6 손66ㅇ c.4", "location": "도서관", "tags": "문학 소설 청소년 성장 감정 공감 관계 학교"}, {"title": "페인트", "author": "이희영 지음", "publisher": "창비", "year": "2019", "isbn": "9788936459093", "copies": 1, "call": "813.6 이97페", "location": "도서관", "tags": "문학 소설 청소년 성장 가족 사회 제도 관계"}, {"title": "체리새우: 비밀글입니다", "author": "황영미 지음", "publisher": "문학동네", "year": "2019", "isbn": "9788954654753", "copies": 1, "call": "813.6 황64ㅊ", "location": "도서관", "tags": "문학 소설 청소년 성장 친구 관계 학교 공감"}, {"title": "오늘 밤, 세계에서 이 사랑이 사라진다 해도", "author": "이치조 미사키 지음;권영주 옮김", "publisher": "모모", "year": "2021", "isbn": "9791191043297", "copies": 1, "call": "833.6 이86ㅇ", "location": "도서관", "tags": "문학 소설 청소년 로맨스 사랑 기억 상실 슬픔"}, {"title": "죽이고 싶은 아이", "author": "이꽃님 지음", "publisher": "우리학교", "year": "2022", "isbn": "9791190337755", "copies": 2, "call": "813.6 이15ㅈ c.2", "location": "도서관", "tags": "문학 소설 청소년 미스터리 학교 관계 범죄 심리 반전"}, {"title": "세계를 건너 너에게 갈게", "author": "이꽃님 지음", "publisher": "문학동네", "year": "2019", "isbn": "9788954650212", "copies": 2, "call": "813.6 이15ㅅ c.2", "location": "도서관", "tags": "문학 소설 청소년 가족 성장 편지 시간여행 감동"}, {"title": "불편한 편의점", "author": "김호연 지음", "publisher": "나무옆의자", "year": "2022", "isbn": "9791161571188", "copies": 2, "call": "813.7 김95ㅂ c.2", "location": "도서관", "tags": "문학 소설 일상 관계 공동체 위로 따뜻함"}, {"title": "범인 없는 살인의 밤", "author": "히가시노 게이고 지음;윤성원 옮김", "publisher": "RHK(알에이치코리아)", "year": "2021", "isbn": "9788925588957", "copies": 1, "call": "833.6 히12ㅂ", "location": "도서관", "tags": "문학 소설 추리 미스터리 범죄 살인 반전 히가시노게이고"}, {"title": "밤은 노래한다", "author": "김연수", "publisher": "문학과지성사", "year": "2008", "isbn": "9788932019000", "copies": 1, "call": "813.6 김64ㅂ", "location": "도서관", "tags": "문학 소설 김연수 역사 만주 사랑 비극 슬픔"}, {"title": "이방인", "author": "알레르 까뮈 저", "publisher": "온스토리", "year": "2014", "isbn": "9788998934200", "copies": 1, "call": "808.9 온57", "location": "도서관", "tags": "문학 소설 고전 실존주의 철학 부조리"}, {"title": "무진기행", "author": "김승옥", "publisher": "아시아", "year": "2014", "isbn": "9788994006277", "copies": 1, "call": "813 김57ㅁ", "location": "도서관", "tags": "문학 소설 한국문학 자아 사회 고전"}, {"title": "나는 미쳐가고 있는 기후과학자입니다", "author": "케이트 마블 지음; 송섬별 옮김", "publisher": "웅진지식하우스", "year": "2025", "isbn": "9788901297538", "copies": 1, "call": "453.9 마47ㄴ", "location": "신간도서", "tags": "비문학 정보서 기후 기후위기 환경 과학 과학자"}, {"title": "빌 게이츠, 기후 재앙을 피하는 법", "author": "빌 게이츠 지음;김민주,이엽 [공]옮김", "publisher": "김영사", "year": "2021", "isbn": "9788934991366", "copies": 1, "call": "539.92 게68ㅂ", "location": "신간도서", "tags": "비문학 정보서 기후 기후위기 환경 탄소 에너지 기술 해결책"}, {"title": "지구를 살리는 기후위기 수업", "author": "이영경 지음", "publisher": "한언", "year": "2022", "isbn": "9788955969238", "copies": 2, "call": "539.9 이64ㅈ c.2", "location": "도서관", "tags": "비문학 정보서 기후 환경 탄소 교육"}, {"title": "플라스틱 섬", "author": "이명애 지음", "publisher": "SANG(상)", "year": "2020", "isbn": "9788991126527", "copies": 1, "call": "813.8 이34ㅍ", "location": "도서관", "tags": "문학 그림책 환경 플라스틱 해양 생태"}, {"title": "플라스틱 빔보", "author": "신현수 지음", "publisher": "자음과모음", "year": "2015", "isbn": "9788954432085", "copies": 1, "call": "813.6 신94ㅍ", "location": "도서관", "tags": "문학 소설 환경 플라스틱 청소년"}, {"title": "미래 과학, 환경을 부탁해!", "author": "안재정,조성화,김희경,김찬국,권혜선 [공]지음", "publisher": "꿈결", "year": "2017", "isbn": "9791188260218", "copies": 1, "call": "539.9 안73ㅁ", "location": "도서관", "tags": "비문학 정보서 환경 과학 미래 기술"}, {"title": "선량한 차별주의자", "author": "김지혜 지음", "publisher": "창비", "year": "2019", "isbn": "9788936477196", "copies": 3, "call": "342.3 김78ㅅ c.3", "location": "도서관", "tags": "비문학 정보서 사회 차별 혐오 인권 언어 윤리"}, {"title": "아픔이 길이 되려면", "author": "김승섭 지음", "publisher": "동아시아", "year": "2017", "isbn": "9788962621952", "copies": 1, "call": "334 김57ㅇ", "location": "도서관", "tags": "비문학 정보서 사회 건강 불평등 보건 인권 의료"}, {"title": "팩트풀니스", "author": "한스 로슬링;올라 로슬링;안나 로슬링 뢴룬드 [공]지음;이창신 옮김", "publisher": "김영사", "year": "2019", "isbn": "9788934985068", "copies": 3, "call": "331.1 로562팩 c.4", "location": "도서관", "tags": "비문학 정보서 사회 통계 데이터 세계 인식"}, {"title": "정의란 무엇인가", "author": "마이클 샌델 지음;김명철 옮김", "publisher": "와이즈베리(미래엔)", "year": "2014", "isbn": "9788937834790", "copies": 4, "call": "340.1 샌24ㅈ c.4", "location": "도서관", "tags": "비문학 정보서 철학 윤리 정의 정치 사회"}, {"title": "어떤 양형 이유", "author": "박주영 지음", "publisher": "모로", "year": "2023", "isbn": "9791197559778", "copies": 1, "call": "364.156 박76ㅇ", "location": "신간도서", "tags": "비문학 에세이 법 재판 판사 형사 정의"}, {"title": "최신 범죄심리학", "author": "이수정 저", "publisher": "학지사", "year": "2018", "isbn": "9788999715167", "copies": 1, "call": "364.45 이56ㅊ", "location": "도서관", "tags": "비문학 정보서 범죄 심리 법 수사"}, {"title": "있지만 없는 아이들", "author": "은유 지음; 국가인권위원회 기획", "publisher": "창비", "year": "2021", "isbn": "9788936478735", "copies": 1, "call": "338.5 은66ㅇ", "location": "신간도서", "tags": "비문학 정보서 인권 아동 이주 사회"}, {"title": "장애시민 불복종", "author": "변재원 지음", "publisher": "창비", "year": "2023", "isbn": "9788936486938", "copies": 2, "call": "342.1 변73ㅈ c.2", "location": "신간도서, 도서관", "tags": "비문학 정보서 장애 인권 사회 차별"}, {"title": "떨림과 울림", "author": "김상욱 지음", "publisher": "동아시아", "year": "2018", "isbn": "9788962622508", "copies": 4, "call": "420.04 김52ㄸ c.4", "location": "도서관", "tags": "비문학 정보서 물리 과학 교양"}, {"title": "부분과 전체", "author": "베르너 하이젠베르크 지음;유영미 옮김", "publisher": "서커스(서커스출판상회)", "year": "2020", "isbn": "9791187295501", "copies": 3, "call": "429.2 하68ㅂ c.3", "location": "도서관", "tags": "비문학 정보서 물리 양자역학 과학철학 과학사"}, {"title": "코스모스", "author": "칼 세이건 지음; 홍승수 옮김", "publisher": "사이언스 북스", "year": "2006", "isbn": "9788983711892", "copies": 2, "call": "443.1 세68ㅋ c.4", "location": "신간도서, 도서관", "tags": "비문학 정보서 우주 천문 과학"}, {"title": "코스모스 : 가능한세계들", "author": "앤 드루얀 지음;김명남 옮김", "publisher": "사이언스북스", "year": "2020", "isbn": "9791190403283", "copies": 4, "call": "443.1 드296ㅋ c.4", "location": "도서관", "tags": "비문학 정보서 우주 천문 과학 미래"}, {"title": "뉴턴의 프린키피아", "author": "안상현 지음", "publisher": "동아시아", "year": "2015", "isbn": "9788962621259", "copies": 1, "call": "420.1 안52ㄴ", "location": "도서관", "tags": "비문학 원전 물리 뉴턴 과학 수학"}, {"title": "야구X수학 (야구로 배우는 재미있는 수학 공부)", "author": "류선규, 홍석만", "publisher": "페이스메이커", "year": "2025", "isbn": "9791170436300", "copies": 10, "call": "410 류54ㅇ c.10", "location": "도서관", "tags": "비문학 정보서 수학 야구 스포츠"}, {"title": "위험한 숫자들", "author": "사너 블라우 지음; 노택복 옮김", "publisher": "더퀘스트", "year": "2022", "isbn": "9791165218935", "copies": 1, "call": "411.1 블292ㅇ", "location": "신간도서", "tags": "비문학 정보서 수학 통계 숫자 사회 데이터"}, {"title": "세상을 바꾼 화학", "author": "원정현 지음", "publisher": "리베르스쿨", "year": "2021", "isbn": "9788965822417", "copies": 1, "call": "430.09 원74ㅅ c.2", "location": "도서관", "tags": "비문학 정보서 화학 과학사 원소"}, {"title": "이기적 유전자", "author": "리처드 도킨스 지음;홍영남,이상임 [공]옮김", "publisher": "을유문화사", "year": "2018", "isbn": "9788932473901", "copies": 3, "call": "476.1 도778ㅇ c.4", "location": "신간도서, 도서관", "tags": "비문학 정보서 생명 진화 유전자 생물"}, {"title": "생명이란 무엇인가", "author": "폴 너스 지음;이한음 옮김", "publisher": "까치(까치글방)", "year": "2021", "isbn": "9788972917304", "copies": 1, "call": "472 너57ㅅ", "location": "도서관", "tags": "비문학 정보서 생명 생물 과학"}, {"title": "세포", "author": "남궁석 지음", "publisher": "에디토리얼", "year": "2020", "isbn": "9791190254045", "copies": 1, "call": "474 남16ㅅ", "location": "도서관", "tags": "비문학 정보서 생명 세포 생물 의학"}, {"title": "경험은 어떻게 유전자에 새겨지는가", "author": "데이비드 무어 지음; 정지인 옮김", "publisher": "아몬드", "year": "2023", "isbn": "9791192465111", "copies": 1, "call": "476.10733 무64ㄱ", "location": "신간도서", "tags": "비문학 정보서 유전자 후성유전 생명 의학"}, {"title": "AI 리터러시 플러스", "author": "김용성 지음", "publisher": "프리렉", "year": "2026", "isbn": "9788965404385", "copies": 1, "call": "004.73 이73ㅎ", "location": "신간도서", "tags": "비문학 정보서 AI 인공지능 디지털 정보기술 컴퓨터 리터러시"}, {"title": "AI에게 건강을 맡겨도 될까요?", "author": "김준혁 지음", "publisher": "휴머니스트", "year": "2025", "isbn": "9791170873952", "copies": 1, "call": "510 김76ㅇ", "location": "신간도서", "tags": "비문학 정보서 AI 인공지능 의료 건강 정보기술 윤리"}, {"title": "질문으로 답을 찾는 인공지능 윤리 수업", "author": "박형빈 지음", "publisher": "한언", "year": "2025", "isbn": "9788955969474", "copies": 1, "call": "004.73 박94ㅈ", "location": "신간도서", "tags": "비문학 정보서 AI 인공지능 정보기술 윤리 사회"}, {"title": "모두의 인공지능 with 파이썬 (누구나 쉽게 시작하는 AI 기초 프로그래밍)", "author": "이영호", "publisher": "길벗", "year": "2025", "isbn": "9791140714995", "copies": 1, "call": "004.73 이64ㅁ", "location": "도서관", "tags": "비문학 정보서 AI 인공지능 컴퓨터 정보기술 프로그래밍 파이썬"}, {"title": "반도체 제국의 미래", "author": "정인성 지음", "publisher": "이레미디어", "year": "2024", "isbn": "9791193394205", "copies": 1, "call": "325.1 정68ㅂ", "location": "신간도서", "tags": "비문학 정보서 반도체 공학 산업 기술 컴퓨터 전자"}, {"title": "500가지 건축으로 읽는 세계사", "author": "소피 콜린스 지음; 성소희 옮김; 임석재 감수", "publisher": "현대지성", "year": "2026", "isbn": "9791139729719", "copies": 1, "call": "909 콜298ㅇ", "location": "신간도서", "tags": "비문학 정보서 건축 건축학 역사 세계사 공간"}, {"title": "수학이 보이는 가우디 건축여행", "author": "문태선 지음", "publisher": "궁리", "year": "2021", "isbn": "9788958207559", "copies": 1, "call": "410 문883ㅅ v.1", "location": "도서관", "tags": "비문학 정보서 건축 건축학 수학 가우디 공간"}, {"title": "나는 간호사, 사람입니다", "author": "김현아 지음", "publisher": "쌤앤파커스", "year": "2018", "isbn": "9788965706137", "copies": 3, "call": "512.804 김94ㄴ c.3", "location": "도서관", "tags": "비문학 에세이 간호 의료 직업 진로"}, {"title": "생명을 살리는 직업. 2: 간호사·약사·수의사", "author": "박민규 지음;김영혜 일러스트", "publisher": "빈빈책방", "year": "2021", "isbn": "9791190105385", "copies": 1, "call": "336.24 박38ㅅ v.2", "location": "도서관", "tags": "비문학 정보서 진로 직업 간호 약학 약사 수의학 수의사 의료 생명"}, {"title": "경제신문이 말하지 않는 경제 이야기", "author": "임주영 지음", "publisher": "민들레북", "year": "2024", "isbn": "9791198362841", "copies": 1, "call": "320.04 임76ㄱ", "location": "도서관", "tags": "비문학 정보서 경제 사회 시장"}, {"title": "오늘부터 제대로, 금융 공부", "author": "권오상 지음", "publisher": "창비", "year": "2018", "isbn": "9788936458720", "copies": 1, "call": "327.04 권65ㅇ", "location": "도서관", "tags": "비문학 정보서 금융 경제 진로"}, {"title": "사피엔스", "author": "유발 하라리 지음;조현욱 옮김", "publisher": "김영사", "year": "2015", "isbn": "9788934972464", "copies": 8, "call": "909 하292ㅅ c.16", "location": "도서관", "tags": "비문학 정보서 역사 인류 문명 사회"}, {"title": "역사란 무엇인가", "author": "E. H. 카 지음;김택현 옮김", "publisher": "까치", "year": "2015", "isbn": "9788972915812", "copies": 2, "call": "901 카ㅇ c.2", "location": "신간도서, 도서관", "tags": "비문학 원전 역사 역사학 철학"}];
+let enriched=JSON.parse(localStorage.getItem("sg_yes24_pilot")||"{}");
+
+// Concept graph: related concepts expand recall, but do not automatically satisfy unrelated mandatory axes.
+const CONCEPTS={
+ "건축":["건축","건축학","건물","공간","도시","주거","설계","디자인","가우디","스마트시티","bim","건설"],
+ "정보":["정보","정보기술","IT","컴퓨터","디지털","AI","인공지능","데이터","프로그래밍","소프트웨어","코딩","반도체","전자","통신","미디어","스마트","자동화"],
+ "환경":["환경","생태","기후","기후변화","기후위기","온난화","탄소","플라스틱","해양","지구","재난"],
+ "AI":["AI","인공지능","머신러닝","딥러닝","자동화","알고리즘","데이터","컴퓨터","정보기술"],
+ "의료":["의료","의학","건강","간호","약학","약사","의사","보건","질병","치료","세포","유전자","생명"],
+ "약학":["약학","약사","의약","약물","의료","의학","건강","생명","화학","바이오"],
+ "추리":["추리","미스터리","탐정","범죄","사건","살인","수사","반전","스릴러"],
+ "청소년":["청소년","십대","10대","학생","학교","성장","친구"],
+ "인권":["인권","차별","혐오","불평등","장애","소수자","이주","권리"],
+ "경제":["경제","금융","시장","자본","투자","화폐"],
+ "역사":["역사","세계사","한국사","문명","과거","역사학"],
+ "과학":["과학","물리","화학","생물","생명","천문","우주","수학","기술"],
+ "수학":["수학","통계","확률","숫자","미적분","기하","데이터"],
+ "우주":["우주","천문","행성","달","화성","코스모스"],
+ "법":["법","재판","판사","형사","범죄","수사","정의"],
+ "진로":["진로","직업","전공","학과","커리어","직업세계","꿈"],
+ "슬픔":["슬픈","슬픔","상실","그리움","비극","눈물","이별","죽음","아픔","애도","외로움","우울"],
+ "따뜻함":["따뜻","위로","힐링","감동","공감","희망","다정"],
+ "반전":["반전","충격","예상밖","뒤집","미스터리","추리"]
+};
+
+const MATERIAL={
+ fiction:["소설","소설책","이야기","문학소설"],
+ nonfiction:["비문학","정보서","정보책","교양서","지식책","자료","정보"],
+ essay:["에세이","수필"],
+ picture:["그림책"],
+ original:["원전","고전원전"]
+};
+const PURPOSE={
+ career:["진로","직업","전공","학과","커리어","꿈"],
+ assignment:["수행평가","수행 평가","과제","탐구","보고서","발표"],
+ casual:["재미","가볍","술술","편하게"]
+};
+const EMOTION={
+ sad:CONCEPTS["슬픔"], warm:CONCEPTS["따뜻함"], twist:CONCEPTS["반전"]
+};
+
+const compact=s=>String(s||"").toLowerCase().replace(/[^0-9a-z가-힣]/g,"");
+const includesAny=(text,arr)=>arr.some(x=>compact(text).includes(compact(x)));
+const allText=b=>[b.title,b.author,b.publisher,b.tags,b.intro,b.toc,b.summary].join(" ");
+
+function detect(q){
+ const qc=compact(q), axes={topics:[],material:null,purpose:null,emotion:null};
+ for(const [k,vals] of Object.entries(CONCEPTS)){
+   if(includesAny(q,[k,...vals])) axes.topics.push(k);
+ }
+ if(includesAny(q,MATERIAL.fiction)) axes.material="fiction";
+ else if(includesAny(q,MATERIAL.nonfiction)) axes.material="nonfiction";
+ else if(includesAny(q,MATERIAL.essay)) axes.material="essay";
+ else if(includesAny(q,MATERIAL.picture)) axes.material="picture";
+ else if(includesAny(q,MATERIAL.original)) axes.material="original";
+ if(includesAny(q,PURPOSE.career)) axes.purpose="career";
+ else if(includesAny(q,PURPOSE.assignment)) axes.purpose="assignment";
+ else if(includesAny(q,PURPOSE.casual)) axes.purpose="casual";
+ if(includesAny(q,EMOTION.sad)) axes.emotion="sad";
+ else if(includesAny(q,EMOTION.warm)) axes.emotion="warm";
+ else if(includesAny(q,EMOTION.twist)) axes.emotion="twist";
+
+ // Remove generic concept labels when a more specific one is present.
+ if(axes.topics.includes("정보") && (axes.topics.includes("AI"))) axes.topics=axes.topics.filter(x=>x!=="정보");
+ if(axes.topics.includes("의료") && axes.topics.includes("약학")) axes.topics=axes.topics.filter(x=>x!=="의료");
+ axes.topics=[...new Set(axes.topics)];
+ return axes;
+}
+
+function materialMatch(b,m){
+ const t=compact(b.tags);
+ if(!m)return true;
+ if(m==="fiction") return t.includes("소설");
+ if(m==="nonfiction") return t.includes("비문학")||t.includes("정보서");
+ if(m==="essay") return t.includes("에세이");
+ if(m==="picture") return t.includes("그림책");
+ if(m==="original") return t.includes("원전");
+ return true;
+}
+function purposeMatch(b,p){
+ if(!p)return true;
+ const t=compact(b.tags);
+ if(p==="career"){
+   // Career queries prefer informational/nonfiction books; fiction is not forbidden only if explicitly requested.
+   return t.includes("비문학")||t.includes("정보서")||t.includes("에세이")||t.includes("진로")||t.includes("직업");
+ }
+ if(p==="assignment") return true;
+ return true;
+}
+function conceptScore(b,k){
+ const text=allText(b), tags=b.tags||"";
+ const vals=[k,...(CONCEPTS[k]||[])];
+ let s=0, hits=[];
+ for(const v of vals){
+   const c=compact(v); if(c.length<2)continue;
+   if(compact(tags).includes(c)){s+=9;hits.push(v);}
+   else if(compact(b.title).includes(c)){s+=8;hits.push(v);}
+   else if(compact(b.intro).includes(c)){s+=4;hits.push(v);}
+   else if(compact(b.toc).includes(c)){s+=2;hits.push(v);}
+ }
+ return {score:Math.min(s,35),hits:[...new Set(hits)]};
+}
+function emotionScore(b,e){
+ if(!e)return {score:0,hits:[],matched:true};
+ const arr=EMOTION[e], text=allText(b), tags=b.tags||"";
+ let s=0,h=[];
+ for(const v of arr){
+   if(compact(tags).includes(compact(v))){s+=10;h.push(v);}
+   else if(compact(b.intro).includes(compact(v))){s+=4;h.push(v);}
+ }
+ return {score:Math.min(s,30),hits:[...new Set(h)],matched:s>=8};
+}
+
+function evaluate(b,axes,q){
+ // Hard filters.
+ if(!materialMatch(b,axes.material)) return null;
+ if(!purposeMatch(b,axes.purpose)) return null;
+
+ let score=0, reasons=[], topicMatched=0;
+ for(const k of axes.topics){
+   // "진로" is purpose, not a content topic.
+   if(k==="진로") continue;
+   const r=conceptScore(b,k);
+   if(r.score>=8){topicMatched++;score+=r.score;reasons.push(`${k}: ${r.hits.slice(0,4).join("·")}`);}
+ }
+ const needed=axes.topics.filter(x=>x!=="진로").length;
+ if(needed>0 && topicMatched<needed) return null; // AND across requested topic axes
+
+ const er=emotionScore(b,axes.emotion);
+ if(axes.emotion && !er.matched) return null;
+ score+=er.score;
+ if(er.hits.length) reasons.push(`정서: ${er.hits.slice(0,4).join("·")}`);
+
+ if(axes.material){score+=18;reasons.push("자료형 조건 충족");}
+ if(axes.purpose==="career"){score+=12;reasons.push("진로·정보 탐색에 적합한 자료형");}
+ if(axes.purpose==="assignment"){score+=8;reasons.push("탐구·수행평가 목적");}
+
+ // Exact title/author still useful but never overrides hard conditions.
+ if(compact(b.title).includes(compact(q)) && compact(q).length>2) score+=35;
+ if(/작가|저자|소설가/.test(q) && compact(b.author).includes(compact(q.replace(/작가|저자|소설가/g,"")))) score+=25;
+
+ return {score,reasons};
+}
+
+function merged(b){const e=enriched[b.isbn]||{};return {...b,...e,intro:e.bookIntroduction||"",toc:e.tableOfContents||"",summary:e.bookSummary||"",cover:e.cover||""};}
+async function loadAll(){
+ let done=0,ok=0; document.querySelector("#loadStatus").textContent="불러오는 중…";
+ for(const b of BASE){
+  if(enriched[b.isbn]){done++;ok++;continue;}
+  try{const r=await fetch(`/api/yes24?isbn=${b.isbn}`);const j=await r.json();if(r.ok&&j.ok){enriched[b.isbn]=j.book||j;ok++;}}catch(e){}
+  done++; document.querySelector("#loadStatus").textContent=`진행 ${done} / ${BASE.length} · 성공 ${ok}권`;
+  await new Promise(res=>setTimeout(res,120));
+ }
+ localStorage.setItem("sg_yes24_pilot",JSON.stringify(enriched));
+ document.querySelector("#loadStatus").textContent=`완료: ${BASE.length}권 중 ${ok}권 외부정보 확보.`;
+}
+function clearCache(){localStorage.removeItem("sg_yes24_pilot");enriched={};document.querySelector("#loadStatus").textContent="저장된 외부정보를 지웠습니다.";}
+function setQ(v){document.querySelector("#q").value=v;searchNow();}
+function searchNow(){
+ const q=document.querySelector("#q").value.trim(); if(!q)return;
+ const axes=detect(q);
+ const labels=[];
+ axes.topics.filter(x=>x!=="진로").forEach(x=>labels.push(`주제: ${x}`));
+ if(axes.material)labels.push(`자료형: ${{fiction:"소설",nonfiction:"비문학·정보서",essay:"에세이",picture:"그림책",original:"원전"}[axes.material]}`);
+ if(axes.purpose)labels.push(`목적: ${{career:"진로",assignment:"수행평가·탐구",casual:"가벼운 독서"}[axes.purpose]}`);
+ if(axes.emotion)labels.push(`정서: ${{sad:"슬픔·상실",warm:"따뜻함·위로",twist:"반전"}[axes.emotion]}`);
+ document.querySelector("#intent").innerHTML=labels.map(x=>`<span class="chip">${esc(x)}</span>`).join("") || '<span class="chip">명확한 조건을 추출하지 못함</span>';
+
+ let rows=[];
+ for(const raw of BASE){const b=merged(raw), r=evaluate(b,axes,q); if(r)rows.push({b,...r});}
+ rows.sort((a,b)=>b.score-a.score);
+ const strong=rows.filter(x=>x.score>=20).slice(0,12);
+ document.querySelector("#status").textContent=`“${q}” · 조건을 만족한 결과 ${strong.length}권 (60권 시험군)`;
+ if(!strong.length){
+   document.querySelector("#results").innerHTML=`<div class="noresult"><b>조건에 충분히 맞는 책을 찾지 못했습니다.</b><br>현재는 60권 시험군만 대상으로 검색하고 있습니다. 실제 전체 장서에서 결과가 없다는 뜻은 아닙니다.<br><br><span style="color:#666">이번 버전은 결과 수를 억지로 채우지 않습니다.</span></div>`;
+   return;
+ }
+ document.querySelector("#results").innerHTML=strong.map(x=>card(x.b,x.score,x.reasons)).join("");
+}
+function esc(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function card(b,s,reasons){
+ const rel=s>=60?"매우 적합":s>=35?"적합":"관련 있음";
+ return `<div class="card"><div class="rel">${rel} · 점수 ${s}</div><div class="top">${b.cover?`<img src="${esc(b.cover)}">`:""}<div><div class="title">${esc(b.title)}</div><div class="meta">${esc(b.author)} · ${esc(b.publisher)} · ${esc(b.year)}<br>청구기호 ${esc(b.call)} · ${esc(b.location)} · ${b.copies}권</div><div>${b.tags.split(" ").slice(0,8).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div></div></div><div class="reason"><b>왜 맞나요?</b><br>${reasons.map(esc).join("<br>")}</div>${b.intro?`<details><summary>YES24 책소개 보기</summary><div class="text">${esc(b.intro)}</div></details>`:""}${b.toc?`<details><summary>목차 보기</summary><div class="text">${esc(b.toc)}</div></details>`:""}</div>`;
+}
+</script></div></body></html>
