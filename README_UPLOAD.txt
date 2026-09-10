@@ -1,17 +1,15 @@
-성의고 도서관 V6.2 - 단일 함수 배포본
+성의고 도서관 V6.4 검색 정확도 수정본
 
-목표: Vercel Hobby의 함수 개수/리전 배포 문제를 피하기 위해 API 11개를 하나의 Vercel Function으로 통합했습니다.
+이 버전은 외부 메타데이터를 다시 수집하지 않습니다.
+GitHub에 압축 내용 전체를 기존 파일 위에 덮어쓴 뒤 Commit 하세요.
+API 폴더는 index.mjs 하나만 유지합니다.
 
-중요: GitHub의 기존 api 폴더에 있는 .mjs 파일을 모두 삭제한 뒤, 이 패키지의 api/index.mjs 하나만 올려야 합니다.
+핵심 수정:
+- 중국/한국/일본/영미 등 문학권을 KDC에서 검색 시점에 강제 판정
+- 돈/재테크/투자/금융 검색어 확장
+- 관련/관한 검색은 제목·책소개·키워드의 실제 근거가 있어야 통과
+- 저장된 광범위 태그만으로 결과에 들어오지 못하게 변경
+- 고전 소설은 소설 + 고전 근거를 모두 만족해야 통과
+- 신약개발/기후위기/재테크 같은 복합 개념을 별도 엄격 검증
 
-업로드/교체:
-- 루트: index.html, admin-v5.html, package.json, vercel.json
-- api/: index.mjs 하나
-- lib/: 기존 파일을 이 패키지 내용으로 교체/추가 (routes 폴더 포함)
-
-기존 루트의 data/ 및 school-config.json 등은 삭제하지 않습니다.
-
-Vercel 환경변수(기존 값 유지):
-YES24_API_KEY, NLK_API_KEY, GEMINI_API_KEY, ADMIN_SETUP_SECRET, BLOB_STORE_ID, BLOB_WEBHOOK_PUBLIC_KEY 등
-
-배포 성공 후 관리자 페이지에서 6. 통합 검색 데이터 구축(V6.0)을 확인합니다.
+배포 후 관리자에서 메타데이터 재구축은 필요 없습니다. 바로 학생 검색 화면에서 테스트하세요.
