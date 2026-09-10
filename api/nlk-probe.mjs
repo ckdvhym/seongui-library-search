@@ -121,10 +121,21 @@ export default async function handler(req, res) {
       category: '도서'
     });
 
-    const response = await fetch(`https://www.nl.go.kr/NL/search/openApi/search.do?${params.toString()}`, {
-      headers: { Accept: 'application/json,text/plain,*/*' },
-      cache: 'no-store'
-    });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 12000);
+    let response;
+    try {
+      response = await fetch(`https://www.nl.go.kr/NL/search/openApi/search.do?${params.toString()}`, {
+        headers: {
+          Accept: 'application/json,text/plain,*/*',
+          'User-Agent': 'Mozilla/5.0 (compatible; SeonguiLibrarySearch/5.3.2; +https://seongui-library-search.vercel.app)'
+        },
+        cache: 'no-store',
+        signal: controller.signal
+      });
+    } finally {
+      clearTimeout(timer);
+    }
     const raw = await response.text();
 
     if (!response.ok) {
@@ -192,7 +203,11 @@ export default async function handler(req, res) {
       ok: false,
       code: 'NLK_PROBE_FAILED',
       message: '국립중앙도서관 소장자료 API 연결 확인 중 오류가 발생했습니다.',
-      detail: String(error?.stack || error?.message || error)
+      detail: [
+        String(error?.stack || error?.message || error),
+        error?.cause ? `CAUSE: ${String(error.cause?.stack || error.cause?.message || error.cause)}` : '',
+        error?.code ? `CODE: ${error.code}` : ''
+      ].filter(Boolean).join('\n')
     });
   }
 }

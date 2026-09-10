@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/nlk-probe.mjs": {
+      "regions": ["icn1"],
+      "maxDuration": 30
+    }
+  }
+}
