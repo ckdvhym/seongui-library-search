@@ -7,7 +7,8 @@ export default async function handler(request) {
 
   try {
     const result = await get('schools/seongui-high/catalog/base-catalog.json', {
-      access: 'private'
+      access: 'private',
+      useCache: false
     });
     if (!result || result.statusCode !== 200 || !result.stream) {
       return Response.json({ ok: false, message: '저장된 카탈로그가 없습니다.' }, { status: 404 });
