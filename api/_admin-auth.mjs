@@ -1,3 +1,18 @@
+function readHeader(request, name) {
+  const headers = request?.headers;
+  if (!headers) return '';
+
+  // Web Request / Headers
+  if (typeof headers.get === 'function') {
+    return headers.get(name) || '';
+  }
+
+  // Vercel Node.js request (IncomingMessage)
+  const lower = name.toLowerCase();
+  const value = headers[lower] ?? headers[name] ?? '';
+  return Array.isArray(value) ? (value[0] || '') : String(value || '');
+}
+
 export function requireAdmin(request) {
   const configured = process.env.ADMIN_SETUP_SECRET;
   if (!configured) {
@@ -11,7 +26,7 @@ export function requireAdmin(request) {
     };
   }
 
-  const supplied = request.headers.get('x-admin-secret') || '';
+  const supplied = readHeader(request, 'x-admin-secret');
   if (supplied !== configured) {
     return {
       ok: false,
