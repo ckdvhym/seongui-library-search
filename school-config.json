@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "school-config-v1",
+  "schoolId": "seongui-high",
+  "schoolName": "성의고등학교",
+  "appTitle": "성의고등학교 도서관 주제 검색",
+  "heroTitle": "말로 찾는 우리 도서관 책",
+  "heroPrompt": "찾고 싶은 책이나 관심 있는 내용을 편하게 적어보세요.",
+  "catalogUrl": "https://read365.edunet.net/PureScreen/SchoolSearch?schoolName=성의고등학교&provCode=R10&neisCode=R100000855",
+  "features": {
+    "showSearchExamples": false,
+    "showRecommendationsOnHome": false,
+    "showTableOfContents": true,
+    "showBookIntroduction": true,
+    "showProfileTopics": true
+  }
+}
