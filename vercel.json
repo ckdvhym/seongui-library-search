@@ -1,9 +1,11 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "functions": {
-    "api/nlk-probe.mjs": {
-      "regions": ["icn1"],
-      "maxDuration": 30
-    }
+  "$schema":"https://openapi.vercel.sh/vercel.json",
+  "functions":{
+    "api/nlk-probe.mjs":{"regions":["icn1"],"maxDuration":60},
+    "api/metadata-run.mjs":{"regions":["icn1"],"maxDuration":300},
+    "api/metadata-build-index.mjs":{"regions":["icn1"],"maxDuration":300},
+    "api/search.mjs":{"regions":["icn1"],"maxDuration":60},
+    "api/book-detail.mjs":{"regions":["icn1"],"maxDuration":30},
+    "api/catalog-sync.mjs":{"regions":["icn1"],"maxDuration":120}
   }
 }

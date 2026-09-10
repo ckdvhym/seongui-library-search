@@ -1,9 +1,6 @@
 {
-  "name": "seongui-library-search",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@vercel/blob": "^2.6.1",
-    "xlsx": "^0.18.5"
-  }
+  "name":"seongui-library-search",
+  "private":true,
+  "type":"module",
+  "dependencies":{"@vercel/blob":"^2.6.1","xlsx":"^0.18.5"}
 }

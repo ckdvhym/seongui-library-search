@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>성의고 도서관 V5 데이터 관리</title>
+<title>성의고 도서관 통합 관리 V6</title>
 <style>
   :root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#171717;background:#f6f7f9}
   *{box-sizing:border-box} body{margin:0} .wrap{max-width:900px;margin:0 auto;padding:40px 20px 80px}
@@ -22,8 +22,8 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>성의고 도서관 V5 데이터 관리</h1>
-  <p class="sub">브라우저가 닫혀도 사라지지 않는 서버 저장 구조를 확인하는 단계입니다. 먼저 Blob 연결 테스트를 실행합니다. 아직 YES24 대량 수집이나 AI 프로필 구축은 시작하지 않습니다.</p>
+  <h1>성의고 도서관 통합 관리 V6</h1>
+  <p class="sub">장서 동기화부터 메타데이터 구축·검색 인덱스 생성까지 한 화면에서 관리합니다. 작업 결과는 배치마다 서버에 저장되어 중간에 닫혀도 이어서 진행할 수 있습니다.</p>
 
   <div class="card">
     <div class="step">1. 관리자 암호</div>
@@ -62,7 +62,7 @@
 
 
   <div class="card">
-    <div class="step">5. 장서자료 업데이트 <span style="font-size:12px;font-weight:600;color:#6b7280">(V5.4.1)</span></div>
+    <div class="step">5. 장서자료 업데이트 <span style="font-size:12px;font-weight:600;color:#6b7280">(V6.0)</span></div>
     <p class="small">DLS에서 반출한 엑셀(.xlsx)을 올리면 기존 서버 장서와 먼저 비교합니다. <b>비교만 할 때는 데이터가 바뀌지 않습니다.</b></p>
     <div class="row" style="margin-bottom:12px">
       <select id="syncMode" style="padding:12px;border:1px solid #d1d5db;border-radius:10px">
@@ -76,9 +76,27 @@
     <div style="margin-top:12px"><button id="commitSyncBtn" disabled>확인한 내용 서버에 반영</button></div>
   </div>
 
+
+  <div class="card">
+    <div class="step">6. 통합 검색 데이터 구축 <span style="font-size:12px;font-weight:600;color:#6b7280">(V6.0)</span></div>
+    <p class="small">YES24 상세정보를 장서별로 수집하고, 필요한 경우 국립중앙도서관으로 보완한 뒤 주제·장르·키워드 프로필과 학생용 검색 인덱스를 만듭니다. <b>한 번 시작하면 배치마다 서버에 저장</b>되므로 중간에 창을 닫아도 다음에 이어서 할 수 있습니다.</p>
+    <div class="grid" style="margin:14px 0">
+      <div class="metric">처리 완료<b id="metaProcessed">-</b></div>
+      <div class="metric">YES24 확인<b id="metaYes">-</b></div>
+      <div class="metric">검색 준비<b id="indexReady">-</b></div>
+    </div>
+    <div class="row">
+      <button id="metaStartBtn">통합 구축 시작 / 이어하기</button>
+      <button id="metaStopBtn" class="secondary" disabled>일시정지</button>
+      <button id="metaStatusBtn" class="secondary">진행 상태 확인</button>
+      <a href="/" target="_blank" style="padding:12px 16px;border:1px solid #ddd;border-radius:10px;text-decoration:none;color:#222;font-weight:700">학생용 검색 화면</a>
+    </div>
+    <div id="metaStatus" class="status warn" style="margin-top:14px">아직 확인하지 않았습니다.</div>
+  </div>
+
   <div class="card future">
     <div class="step">다음 단계</div>
-    <p class="small">전체 소장자료 동기화 · 신규도서만 추가 · YES24/국립중앙도서관 메타데이터 수집·이어하기 · 기본 프로필 · 필요한 도서만 AI 보강 순서로 진행합니다.</p>
+    <p class="small">메타데이터 1차 구축이 끝나면 학생용 검색 화면을 바로 사용할 수 있습니다. 복잡한 자연어 검색은 필요할 때만 Gemini가 검색 의도 해석에 사용되며, 책 전체를 AI로 다시 처리하지 않습니다.</p>
   </div>
 </div>
 <script>
@@ -157,6 +175,38 @@ function syncText(j){ const mode=j.mode==='full'?'전체 동기화':'신규도�
 $('previewBtn').onclick=async()=>{ const box=$('syncStatus'); box.className='status warn'; box.textContent='엑셀과 서버 장서를 비교하는 중…'; $('commitSyncBtn').disabled=true; try{const j=await syncCall('preview'); lastPreview=j; box.className='status ok'; box.textContent=j.message+'\n\n'+syncText(j); $('commitSyncBtn').disabled=false;}catch(e){box.className='status bad';box.textContent=e.message;} };
 $('commitSyncBtn').onclick=async()=>{ if(!lastPreview) return; if(!confirm('방금 비교한 장서 변경 내용을 서버 영구 저장소에 반영할까요?')) return; const box=$('syncStatus'); $('commitSyncBtn').disabled=true; box.className='status warn'; box.textContent='서버 장서를 안전하게 갱신하는 중…'; try{const j=await syncCall('commit'); box.className='status ok'; box.textContent=j.message+'\n\n'+syncText(j); lastPreview=null;}catch(e){box.className='status bad';box.textContent=e.message;$('commitSyncBtn').disabled=false;} };
 $('dlsFile').onchange=()=>{lastPreview=null;$('commitSyncBtn').disabled=true;}; $('syncMode').onchange=()=>{lastPreview=null;$('commitSyncBtn').disabled=true;};
+
+
+let metaRunning=false, metaStop=false;
+function setMeta(text,kind='warn'){const b=$('metaStatus');b.className='status '+kind;b.textContent=text;}
+async function metaApi(path,options={}){return api(path,options);}
+async function refreshMeta(){
+ try{const j=await metaApi('/api/metadata-status');
+   $('metaProcessed').textContent=`${(j.processed||0).toLocaleString()} / ${(j.total||0).toLocaleString()}`;
+   $('metaYes').textContent=(j.yes24Found||0).toLocaleString();
+   $('indexReady').textContent=j.indexReady?'완료':'준비 중';
+   setMeta(`전체 ${(j.total||0).toLocaleString()}종 중 ${(j.processed||0).toLocaleString()}종 처리\nYES24 확인 ${(j.yes24Found||0).toLocaleString()}종 · 미확인/ISBN없음 ${(j.yes24Missing||0).toLocaleString()}종 · NLK 보완 ${(j.nlkFallbackFound||0).toLocaleString()}종\n${j.indexReady?'학생용 검색 인덱스 준비 완료':'메타데이터 구축 후 검색 인덱스를 자동 생성합니다.'}`,j.indexReady?'ok':'warn');
+   return j;
+ }catch(e){setMeta(e.message,'bad');throw e;}
+}
+$('metaStatusBtn').onclick=refreshMeta;
+$('metaStopBtn').onclick=()=>{metaStop=true;$('metaStopBtn').disabled=true;setMeta('현재 배치가 끝나면 일시정지합니다. 지금까지 결과는 서버에 저장되어 있습니다.','warn');};
+$('metaStartBtn').onclick=async()=>{
+ if(metaRunning)return;metaRunning=true;metaStop=false;$('metaStartBtn').disabled=true;$('metaStopBtn').disabled=false;
+ try{
+  let st=await refreshMeta();
+  while(!st.completed&&!metaStop){
+    setMeta(`메타데이터 구축 중… ${st.processed.toLocaleString()} / ${st.total.toLocaleString()}종\n현재 배치가 끝날 때마다 서버에 저장됩니다.`,'warn');
+    await metaApi('/api/metadata-run',{method:'POST'});st=await refreshMeta();
+  }
+  if(st.completed&&!metaStop){
+    setMeta('메타데이터 1차 구축 완료. 학생용 검색 인덱스를 만드는 중…','warn');
+    const j=await metaApi('/api/metadata-build-index',{method:'POST'});
+    setMeta(`${j.message}\n학생용 검색 화면을 사용할 수 있습니다.`,`ok`);await refreshMeta();
+  }
+ }catch(e){setMeta(`${e.message}\n중간 결과는 저장되어 있으므로 오류를 해결한 뒤 “통합 구축 시작 / 이어하기”를 다시 누르면 됩니다.`,'bad');}
+ finally{metaRunning=false;$('metaStartBtn').disabled=false;$('metaStopBtn').disabled=true;}
+};
 
 </script>
 </body>
