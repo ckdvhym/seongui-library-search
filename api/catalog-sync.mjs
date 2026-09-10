@@ -4,14 +4,14 @@ import { requireAdmin } from './_admin-auth.mjs';
 
 const CATALOG_PATH = 'schools/seongui-high/catalog/base-catalog.json';
 const STATE_PATH = 'schools/seongui-high/state/system-state.json';
-const CODE_VERSION = 'V5.4';
+const CODE_VERSION = 'V5.4.1';
 const ACTIVE = new Set(['대출가능','대출중','비치도서']);
 const EXCLUDED = new Set(['분실','파손','소재불명','가치상실']);
 
 function s(v){ return v == null ? '' : String(v).trim(); }
 function norm(v){ return s(v).replace(/\s+/g,' ').trim(); }
 function isbn(v){ const x=s(v).replace(/[^0-9Xx]/g,''); return x.length>=10 ? x : ''; }
-function kdc(call){ const m=s(call).match(/(^|\s)(\d{3})(?:\.|\s|$)/); return m ? m[2] : ''; }
+function kdc(call){ const m=s(call).match(/(^|\s)(\d{3}(?:\.\d+)?)(?=\s|$)/); return m ? m[2] : ''; }
 function keyOf(b){ const i=isbn(b.identity?.isbn13); if(i) return `i:${i}`; return `t:${norm(b.identity?.title).toLowerCase()}|a:${norm(b.identity?.author).toLowerCase()}`; }
 function rowKey(r){ const i=isbn(r.ISBN); if(i) return `i:${i}`; return `t:${norm(r['자료명']).toLowerCase()}|a:${norm(r['저자']).toLowerCase()}`; }
 function uniq(a){ return [...new Set(a.filter(Boolean))]; }
@@ -51,19 +51,40 @@ function buildFromGroup(g, old, id){
   return {
     id: old?.id || id,
     identity:{title:g.title,author:g.author,publisher:g.publisher,year:g.year,isbn13:g.isbn13},
-    holding:{copies:g.rows.length,registrationNumbers:regs,callNumbers:calls,locations:locs,kdc:kd,kdcMajor:kd?kd[0]+'00':''},
+    holding:{copies:g.rows.length,registrationNumbers:regs,callNumbers:calls,locations:locs,kdc:kd || old?.holding?.kdc || '',kdcMajor:(kd || old?.holding?.kdc)?String(kd || old?.holding?.kdc)[0]+'00':''},
     external: old?.external || blankExternal(), profile: old?.profile || blankProfile(),
     quality:{...(old?.quality||blankQuality()),baseProfileReady:true,sources:uniq([...(old?.quality?.sources||[]),'DLS holdings sync'])}
   };
 }
 function nextId(n){ return `b${String(n).padStart(5,'0')}`; }
+function comparableHolding(h){
+  // V5 최초 카탈로그에는 등록번호가 없었으므로 등록번호 추가 자체를 '장서 변경'으로 세지 않는다.
+  // 실제 이용자 관점의 소장 변화(권수/청구기호/소장처)만 비교한다.
+  return {
+    copies:Number(h?.copies||0),
+    callNumbers:uniq((h?.callNumbers||[]).map(norm)).sort(),
+    locations:uniq((h?.locations||[]).map(norm)).sort()
+  };
+}
+function sameIdentity(a,b){
+  return norm(a?.identity?.title)===norm(b?.identity?.title) &&
+    norm(a?.identity?.author)===norm(b?.identity?.author) &&
+    norm(a?.identity?.publisher)===norm(b?.identity?.publisher) &&
+    norm(a?.identity?.year)===norm(b?.identity?.year) &&
+    isbn(a?.identity?.isbn13)===isbn(b?.identity?.isbn13);
+}
 function summarize(oldBooks,newBooks,mode,rows){
   const om=new Map(oldBooks.map(b=>[keyOf(b),b])), nm=new Map(newBooks.map(b=>[keyOf(b),b]));
   let added=0,removed=0,changed=0,unchanged=0;
   const addedExamples=[],removedExamples=[],changedExamples=[];
-  for(const [k,b] of nm){ const o=om.get(k); if(!o){added++; if(addedExamples.length<8) addedExamples.push(b.identity.title);} else { const a=JSON.stringify(o.holding), c=JSON.stringify(b.holding); if(a!==c){changed++;if(changedExamples.length<8)changedExamples.push(b.identity.title);}else unchanged++; } }
+  for(const [k,b] of nm){
+    const o=om.get(k);
+    if(!o){added++; if(addedExamples.length<8) addedExamples.push(b.identity.title); continue;}
+    const holdingSame=JSON.stringify(comparableHolding(o.holding))===JSON.stringify(comparableHolding(b.holding));
+    if(!holdingSame || !sameIdentity(o,b)){changed++;if(changedExamples.length<8)changedExamples.push(b.identity.title);} else unchanged++;
+  }
   for(const [k,b] of om){ if(!nm.has(k)){removed++;if(removedExamples.length<8)removedExamples.push(b.identity.title);} }
-  return {version:CODE_VERSION,mode,inputRows:rows.length,resultTitles:newBooks.length,added,changed,removed,unchanged,examples:{added:addedExamples,changed:changedExamples,removed:removedExamples}};
+  return {version:'V5.4.1',mode,inputRows:rows.length,resultTitles:newBooks.length,added,changed,removed,unchanged,examples:{added:addedExamples,changed:changedExamples,removed:removedExamples}};
 }
 function fullSync(oldCatalog, rows){
   const groups=groupRows(activeRows(rows)); const oldMap=new Map(oldCatalog.books.map(b=>[keyOf(b),b])); let seq=oldCatalog.books.length+1; const books=[];
