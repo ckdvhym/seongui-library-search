@@ -52,12 +52,28 @@
   </div>
 
   <div class="card">
-    <div class="step">4. 국립중앙도서관 소장자료 API 연결 <span style="font-size:12px;font-weight:600;color:#6b7280">(코드 V5.3.5)</span></div>
+    <div class="step">4. 국립중앙도서관 소장자료 API 연결 <span style="font-size:12px;font-weight:600;color:#6b7280">(코드 V5.4)</span></div>
     <p class="small">Vercel에 설정한 NLK_API_KEY를 서버에서만 사용해 ISBN 서지정보 API를 확인합니다. 인증키는 브라우저에 노출하지 않습니다.</p>
     <div class="row">
       <button id="nlkBtn">국립중앙도서관 연결 테스트</button>
       <div class="grow"><div id="nlkStatus" class="status warn">아직 확인하지 않았습니다.</div></div>
     </div>
+  </div>
+
+
+  <div class="card">
+    <div class="step">5. 장서자료 업데이트 <span style="font-size:12px;font-weight:600;color:#6b7280">(V5.4)</span></div>
+    <p class="small">DLS에서 반출한 엑셀(.xlsx)을 올리면 기존 서버 장서와 먼저 비교합니다. <b>비교만 할 때는 데이터가 바뀌지 않습니다.</b></p>
+    <div class="row" style="margin-bottom:12px">
+      <select id="syncMode" style="padding:12px;border:1px solid #d1d5db;border-radius:10px">
+        <option value="full">전체 소장자료 동기화</option>
+        <option value="add">신규 도서만 추가</option>
+      </select>
+      <input id="dlsFile" type="file" accept=".xlsx,.xls" class="grow" style="padding:10px;background:white;border:1px solid #d1d5db;border-radius:10px">
+      <button id="previewBtn">업로드 내용 비교</button>
+    </div>
+    <div id="syncStatus" class="status warn">아직 엑셀을 비교하지 않았습니다.</div>
+    <div style="margin-top:12px"><button id="commitSyncBtn" disabled>확인한 내용 서버에 반영</button></div>
   </div>
 
   <div class="card future">
@@ -127,6 +143,21 @@ $('initBtn').onclick=async()=>{
   }catch(e){setStatus(e.message,'bad');}
   finally{$('initBtn').disabled=false;}
 };
+
+let lastPreview=null;
+async function syncCall(action){
+  const f=$('dlsFile').files[0]; if(!f) throw new Error('DLS 엑셀 파일을 선택해 주세요.');
+  const s=secret(); if(!s) throw new Error('관리자 암호를 입력해 주세요.');
+  const mode=$('syncMode').value;
+  const r=await fetch(`/api/catalog-sync?mode=${mode}&action=${action}`,{method:'POST',headers:{'x-admin-secret':s,'content-type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'},body:f});
+  const raw=await r.text(); let j; try{j=JSON.parse(raw);}catch{throw new Error(`서버 응답을 읽지 못했습니다. HTTP ${r.status}\n${raw.slice(0,600)}`)}
+  if(!r.ok) throw new Error((j.message||`HTTP ${r.status}`)+(j.detail?'\n'+j.detail:'')); return j;
+}
+function syncText(j){ const mode=j.mode==='full'?'전체 동기화':'신규도서 추가'; const ex=j.examples||{}; return `${j.version} · ${mode}\n엑셀 ${j.inputRows.toLocaleString()}행 → 결과 ${j.resultTitles.toLocaleString()}종\n신규 ${j.added}종 · 변경 ${j.changed}종 · 제외/삭제 ${j.removed}종 · 동일 ${j.unchanged}종`+(ex.added?.length?`\n신규 예: ${ex.added.join(', ')}`:'')+(ex.changed?.length?`\n변경 예: ${ex.changed.join(', ')}`:'')+(ex.removed?.length?`\n제외/삭제 예: ${ex.removed.join(', ')}`:''); }
+$('previewBtn').onclick=async()=>{ const box=$('syncStatus'); box.className='status warn'; box.textContent='엑셀과 서버 장서를 비교하는 중…'; $('commitSyncBtn').disabled=true; try{const j=await syncCall('preview'); lastPreview=j; box.className='status ok'; box.textContent=j.message+'\n\n'+syncText(j); $('commitSyncBtn').disabled=false;}catch(e){box.className='status bad';box.textContent=e.message;} };
+$('commitSyncBtn').onclick=async()=>{ if(!lastPreview) return; if(!confirm('방금 비교한 장서 변경 내용을 서버 영구 저장소에 반영할까요?')) return; const box=$('syncStatus'); $('commitSyncBtn').disabled=true; box.className='status warn'; box.textContent='서버 장서를 안전하게 갱신하는 중…'; try{const j=await syncCall('commit'); box.className='status ok'; box.textContent=j.message+'\n\n'+syncText(j); lastPreview=null;}catch(e){box.className='status bad';box.textContent=e.message;$('commitSyncBtn').disabled=false;} };
+$('dlsFile').onchange=()=>{lastPreview=null;$('commitSyncBtn').disabled=true;}; $('syncMode').onchange=()=>{lastPreview=null;$('commitSyncBtn').disabled=true;};
+
 </script>
 </body>
 </html>
