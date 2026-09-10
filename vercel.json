@@ -1,12 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "regions": ["icn1"],
-  "functions": {
-    "api/nlk-probe.mjs": { "maxDuration": 60 },
-    "api/metadata-run.mjs": { "maxDuration": 300 },
-    "api/metadata-build-index.mjs": { "maxDuration": 300 },
-    "api/search.mjs": { "maxDuration": 60 },
-    "api/book-detail.mjs": { "maxDuration": 30 },
-    "api/catalog-sync.mjs": { "maxDuration": 120 }
-  }
+  "regions": ["icn1"]
 }
