@@ -4,46 +4,75 @@ import { requireAdmin } from './_admin-auth.mjs';
 const TEST_ISBN = '9791191824001'; // 지구 끝의 온실
 const STATE_PATH = 'schools/seongui-high/state/system-state.json';
 
-function clean(v) {
-  if (v == null) return '';
-  if (Array.isArray(v)) return v.map(clean).filter(Boolean).join(' / ');
+function primitiveText(v, depth = 0) {
+  if (v == null || depth > 8) return '';
+  if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') return String(v).trim();
+  if (Array.isArray(v)) return v.map(x => primitiveText(x, depth + 1)).filter(Boolean).join(' / ');
   if (typeof v === 'object') {
-    if ('#text' in v) return clean(v['#text']);
-    return '';
+    if ('#text' in v) return primitiveText(v['#text'], depth + 1);
+    if ('_text' in v) return primitiveText(v._text, depth + 1);
+    if ('$t' in v) return primitiveText(v.$t, depth + 1);
+    return Object.values(v).map(x => primitiveText(x, depth + 1)).filter(Boolean).join(' / ');
   }
-  return String(v).trim();
+  return '';
 }
 
 function normalizeIsbn(v) {
-  return clean(v).replace(/[^0-9Xx]/g, '');
+  return primitiveText(v).replace(/[^0-9Xx]/g, '');
 }
 
-function collectRecords(value, out = [], depth = 0) {
-  if (depth > 10 || value == null || out.length > 100) return out;
+function findValuesByKey(value, wantedKey, out = [], depth = 0) {
+  if (value == null || depth > 12 || out.length > 100) return out;
   if (Array.isArray(value)) {
-    for (const item of value) collectRecords(item, out, depth + 1);
+    for (const item of value) findValuesByKey(item, wantedKey, out, depth + 1);
     return out;
   }
   if (typeof value !== 'object') return out;
 
-  const keys = Object.keys(value);
-  const looksLikeRecord = keys.some((k) => [
-    'title_info', 'author_info', 'pub_info', 'pub_year_info',
-    'control_no', 'isbn', 'call_no', 'kdc_code_1s', 'detail_link'
-  ].includes(k));
-  if (looksLikeRecord) out.push(value);
-
-  for (const v of Object.values(value)) collectRecords(v, out, depth + 1);
+  for (const [k, v] of Object.entries(value)) {
+    if (String(k).toLowerCase() === wantedKey.toLowerCase()) out.push(v);
+    findValuesByKey(v, wantedKey, out, depth + 1);
+  }
   return out;
 }
 
-function selectBook(payload, isbn) {
-  const records = collectRecords(payload);
-  const target = normalizeIsbn(isbn);
-  return records.find((r) => {
-    const ri = normalizeIsbn(r.isbn);
-    return ri && (ri === target || ri.includes(target) || target.includes(ri));
-  }) || records[0] || null;
+function firstField(payload, key) {
+  const values = findValuesByKey(payload, key);
+  for (const v of values) {
+    const text = primitiveText(v);
+    if (text) return text;
+  }
+  return '';
+}
+
+function findIsbnContainer(value, target, depth = 0) {
+  if (value == null || depth > 12) return null;
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const hit = findIsbnContainer(item, target, depth + 1);
+      if (hit) return hit;
+    }
+    return null;
+  }
+  if (typeof value !== 'object') return null;
+
+  for (const [k, v] of Object.entries(value)) {
+    if (String(k).toLowerCase() === 'isbn') {
+      const isbn = normalizeIsbn(v);
+      if (isbn && (isbn === target || isbn.includes(target) || target.includes(isbn))) return value;
+    }
+  }
+
+  for (const v of Object.values(value)) {
+    const hit = findIsbnContainer(v, target, depth + 1);
+    if (hit) return hit;
+  }
+  return null;
+}
+
+function fieldFrom(container, payload, key) {
+  const local = container ? firstField(container, key) : '';
+  return local || firstField(payload, key);
 }
 
 function detectApiError(payload) {
@@ -67,7 +96,7 @@ function detectApiError(payload) {
   return null;
 }
 
-async function updateState() {
+async function updateState(sample) {
   try {
     const current = await get(STATE_PATH, { access: 'private', useCache: false });
     if (!current?.stream) return false;
@@ -78,7 +107,9 @@ async function updateState() {
       status: 'connected',
       api: '국립중앙도서관 소장자료 Open API',
       lastCheckedAt: new Date().toISOString(),
-      testIsbn: TEST_ISBN
+      testIsbn: TEST_ISBN,
+      parserVersion: '5.3.3',
+      sampleTitle: sample?.title || null
     };
     await put(STATE_PATH, JSON.stringify(state, null, 2), {
       access: 'private',
@@ -93,9 +124,7 @@ async function updateState() {
 }
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ ok: false, message: 'POST 요청만 허용됩니다.' });
-  }
+  if (req.method !== 'POST') return res.status(405).json({ ok: false, message: 'POST 요청만 허용됩니다.' });
   if (!requireAdmin(req, res)) return;
 
   const key = process.env.NLK_API_KEY;
@@ -108,8 +137,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 사용자 제공 '국립중앙도서관 소장자료 Open API 가이드 v2.6' 기준
-    // 상세검색 ISBN: detailSearch=true&isbnOp=isbn&isbnCode=<ISBN>
     const params = new URLSearchParams({
       key,
       apiType: 'json',
@@ -128,7 +155,7 @@ export default async function handler(req, res) {
       response = await fetch(`https://www.nl.go.kr/NL/search/openApi/search.do?${params.toString()}`, {
         headers: {
           Accept: 'application/json,text/plain,*/*',
-          'User-Agent': 'Mozilla/5.0 (compatible; SeonguiLibrarySearch/5.3.2; +https://seongui-library-search.vercel.app)'
+          'User-Agent': 'Mozilla/5.0 (compatible; SeonguiLibrarySearch/5.3.3; +https://seongui-library-search.vercel.app)'
         },
         cache: 'no-store',
         signal: controller.signal
@@ -136,14 +163,14 @@ export default async function handler(req, res) {
     } finally {
       clearTimeout(timer);
     }
-    const raw = await response.text();
 
+    const raw = await response.text();
     if (!response.ok) {
       return res.status(502).json({
         ok: false,
         code: 'NLK_HTTP_ERROR',
         message: `국립중앙도서관 소장자료 API가 HTTP ${response.status}를 반환했습니다.`,
-        detail: raw.slice(0, 1000)
+        detail: raw.slice(0, 1200)
       });
     }
 
@@ -155,7 +182,7 @@ export default async function handler(req, res) {
         ok: false,
         code: 'NLK_NOT_JSON',
         message: '국립중앙도서관 API 응답을 JSON으로 읽지 못했습니다.',
-        detail: raw.slice(0, 1000)
+        detail: raw.slice(0, 1200)
       });
     }
 
@@ -165,37 +192,46 @@ export default async function handler(req, res) {
         ok: false,
         code: `NLK_${apiError.code}`,
         message: `국립중앙도서관 API 오류 ${apiError.code}: ${apiError.msg}`,
-        detail: JSON.stringify(payload).slice(0, 1000)
+        detail: JSON.stringify(payload).slice(0, 1200)
       });
     }
 
-    const book = selectBook(payload, TEST_ISBN);
-    if (!book) {
+    const target = normalizeIsbn(TEST_ISBN);
+    const record = findIsbnContainer(payload, target);
+    const sample = {
+      title: fieldFrom(record, payload, 'title_info'),
+      author: fieldFrom(record, payload, 'author_info'),
+      publisher: fieldFrom(record, payload, 'pub_info'),
+      year: fieldFrom(record, payload, 'pub_year_info'),
+      isbn: fieldFrom(record, payload, 'isbn') || TEST_ISBN,
+      callNo: fieldFrom(record, payload, 'call_no'),
+      kdcCode: fieldFrom(record, payload, 'kdc_code_1s'),
+      kdcName: fieldFrom(record, payload, 'kdc_name_1s'),
+      controlNo: fieldFrom(record, payload, 'control_no'),
+      detailLink: fieldFrom(record, payload, 'detail_link')
+    };
+
+    const meaningful = [sample.title, sample.author, sample.publisher].filter(Boolean).length;
+    if (meaningful === 0) {
       return res.status(502).json({
         ok: false,
-        code: 'NLK_NO_BOOK',
-        message: 'API 연결은 되었지만 테스트 ISBN의 소장자료 검색 결과를 찾지 못했습니다.',
-        detail: JSON.stringify(payload).slice(0, 1000)
+        code: 'NLK_PARSE_INCOMPLETE',
+        message: 'API 연결은 정상이나 서지 필드 파싱이 아직 완전하지 않습니다.',
+        detail: JSON.stringify({
+          topLevelKeys: Object.keys(payload || {}),
+          titleValues: findValuesByKey(payload, 'title_info').slice(0, 3),
+          authorValues: findValuesByKey(payload, 'author_info').slice(0, 3),
+          isbnValues: findValuesByKey(payload, 'isbn').slice(0, 3)
+        }).slice(0, 3000)
       });
     }
 
-    const stateUpdated = await updateState();
+    const stateUpdated = await updateState(sample);
     return res.status(200).json({
       ok: true,
-      message: '국립중앙도서관 소장자료 Open API 연결이 정상입니다.',
+      message: '국립중앙도서관 소장자료 Open API 연결 및 서지정보 파싱이 정상입니다.',
       testIsbn: TEST_ISBN,
-      sample: {
-        title: clean(book.title_info),
-        author: clean(book.author_info),
-        publisher: clean(book.pub_info),
-        year: clean(book.pub_year_info),
-        isbn: clean(book.isbn),
-        callNo: clean(book.call_no),
-        kdcCode: clean(book.kdc_code_1s),
-        kdcName: clean(book.kdc_name_1s),
-        controlNo: clean(book.control_no),
-        detailLink: clean(book.detail_link)
-      },
+      sample,
       stateUpdated
     });
   } catch (error) {
