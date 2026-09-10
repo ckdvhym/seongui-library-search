@@ -52,7 +52,7 @@
   </div>
 
   <div class="card">
-    <div class="step">4. 국립중앙도서관 소장자료 API 연결</div>
+    <div class="step">4. 국립중앙도서관 소장자료 API 연결 <span style="font-size:12px;font-weight:600;color:#6b7280">(코드 V5.3.5)</span></div>
     <p class="small">Vercel에 설정한 NLK_API_KEY를 서버에서만 사용해 ISBN 서지정보 API를 확인합니다. 인증키는 브라우저에 노출하지 않습니다.</p>
     <div class="row">
       <button id="nlkBtn">국립중앙도서관 연결 테스트</button>
@@ -113,7 +113,7 @@ $('nlkBtn').onclick=async()=>{
     const j=await api('/api/nlk-probe',{method:'POST'});
     const x=j.sample||{};
     box.className='status ok';
-    box.textContent=j.message+`\n테스트 도서: ${x.title||'-'} / ${x.author||'-'}\n출판사 ${x.publisher||'-'} · 발행년도 ${x.year||'-'} · ISBN ${x.isbn||'-'}\nKDC ${x.kdcCode||'-'} ${x.kdcName||''}`;
+    box.textContent=`${j.version||'버전 미확인'}\n`+j.message+`\n테스트 도서: ${x.title||'-'} / ${x.author||'-'}\n출판사 ${x.publisher||'-'} · 발행년도 ${x.year||'-'} · ISBN ${x.isbn||'-'}\nKDC ${x.kdcCode||'-'} ${x.kdcName||''}`;
   }catch(e){ box.className='status bad'; box.textContent=e.message; }
   finally{$('nlkBtn').disabled=false;}
 };

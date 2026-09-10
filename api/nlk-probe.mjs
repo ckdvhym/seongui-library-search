@@ -4,6 +4,7 @@ import { requireAdmin } from './_admin-auth.mjs';
 const TEST_ISBN = '9791191824001'; // 지구 끝의 온실
 const TEST_TITLE = '지구 끝의 온실';
 const STATE_PATH = 'schools/seongui-high/state/system-state.json';
+const CODE_VERSION = 'V5.3.5';
 
 function primitiveText(v, depth = 0) {
   if (v == null || depth > 8) return '';
@@ -132,7 +133,7 @@ async function callNlk(key, mode) {
     response = await fetch(`https://www.nl.go.kr/NL/search/openApi/search.do?${params.toString()}`, {
       headers: {
         Accept: 'application/json,text/plain,*/*',
-        'User-Agent': 'Mozilla/5.0 (compatible; SeonguiLibrarySearch/5.3.4; +https://seongui-library-search.vercel.app)'
+        'User-Agent': 'Mozilla/5.0 (compatible; SeonguiLibrarySearch/5.3.5; +https://seongui-library-search.vercel.app)'
       },
       cache: 'no-store',
       signal: controller.signal
@@ -161,7 +162,7 @@ async function updateState(sample) {
       api: '국립중앙도서관 소장자료 Open API',
       lastCheckedAt: new Date().toISOString(),
       testIsbn: TEST_ISBN,
-      parserVersion: '5.3.4',
+      parserVersion: '5.3.5',
       sampleTitle: sample?.title || null
     };
     await put(STATE_PATH, JSON.stringify(state, null, 2), {
@@ -177,13 +178,14 @@ async function updateState(sample) {
 }
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ ok: false, message: 'POST 요청만 허용됩니다.' });
+  if (req.method !== 'POST') return res.status(405).json({ ok: false, version: CODE_VERSION, message: 'POST 요청만 허용됩니다.' });
   if (!requireAdmin(req, res)) return;
 
   const key = process.env.NLK_API_KEY;
   if (!key) {
     return res.status(503).json({
       ok: false,
+      version: CODE_VERSION,
       code: 'NLK_KEY_NOT_CONFIGURED',
       message: 'Vercel 환경변수 NLK_API_KEY가 설정되어 있지 않습니다.'
     });
@@ -222,6 +224,7 @@ export default async function handler(req, res) {
     if (finalTotal === 0) {
       return res.status(200).json({
         ok: true,
+        version: CODE_VERSION,
         connected: true,
         recordFound: false,
         message: '국립중앙도서관 API 연결은 정상입니다. 다만 테스트 도서는 소장자료 검색 결과가 0건입니다.',
@@ -234,6 +237,7 @@ export default async function handler(req, res) {
     if (meaningful === 0) {
       return res.status(502).json({
         ok: false,
+        version: CODE_VERSION,
         code: 'NLK_PARSE_INCOMPLETE',
         message: 'API 연결과 검색 결과는 정상이나 실제 result 레코드의 필드 파싱을 더 보완해야 합니다.',
         detail: JSON.stringify({
@@ -252,6 +256,7 @@ export default async function handler(req, res) {
     const stateUpdated = await updateState(sample);
     return res.status(200).json({
       ok: true,
+      version: CODE_VERSION,
       message: lookupMode === 'isbn' ? '국립중앙도서관 소장자료 Open API의 ISBN 조회와 서지정보 파싱이 정상입니다.' : '국립중앙도서관 API 연결은 정상이며, ISBN 0건 후 제목 검색으로 서지정보를 확인했습니다.',
       testIsbn: TEST_ISBN,
       testTitle: TEST_TITLE,
@@ -263,6 +268,7 @@ export default async function handler(req, res) {
   } catch (error) {
     return res.status(500).json({
       ok: false,
+      version: CODE_VERSION,
       code: 'NLK_PROBE_FAILED',
       message: '국립중앙도서관 소장자료 API 연결 확인 중 오류가 발생했습니다.',
       detail: [
