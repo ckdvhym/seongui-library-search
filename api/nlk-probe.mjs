@@ -2,6 +2,7 @@ import { get, put } from '@vercel/blob';
 import { requireAdmin } from './_admin-auth.mjs';
 
 const TEST_ISBN = '9791191824001'; // 지구 끝의 온실
+const TEST_TITLE = '지구 끝의 온실';
 const STATE_PATH = 'schools/seongui-high/state/system-state.json';
 
 function primitiveText(v, depth = 0) {
@@ -96,6 +97,58 @@ function detectApiError(payload) {
   return null;
 }
 
+
+function numericTotal(payload) {
+  const raw = payload?.total ?? firstField(payload, 'total');
+  const n = Number(String(raw ?? '').replace(/[^0-9]/g, ''));
+  return Number.isFinite(n) ? n : 0;
+}
+
+function firstResultRecord(payload) {
+  const result = payload?.result;
+  if (Array.isArray(result)) return result.find(x => x && typeof x === 'object') || null;
+  if (result && typeof result === 'object') {
+    for (const v of Object.values(result)) {
+      if (Array.isArray(v)) {
+        const hit = v.find(x => x && typeof x === 'object');
+        if (hit) return hit;
+      }
+      if (v && typeof v === 'object') return v;
+    }
+  }
+  return null;
+}
+
+async function callNlk(key, mode) {
+  const common = { key, apiType: 'json', pageNum: '1', pageSize: '10', category: '도서' };
+  const params = mode === 'isbn'
+    ? new URLSearchParams({ ...common, detailSearch: 'true', isbnOp: 'isbn', isbnCode: TEST_ISBN })
+    : new URLSearchParams({ ...common, srchTarget: 'title', kwd: TEST_TITLE });
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12000);
+  let response;
+  try {
+    response = await fetch(`https://www.nl.go.kr/NL/search/openApi/search.do?${params.toString()}`, {
+      headers: {
+        Accept: 'application/json,text/plain,*/*',
+        'User-Agent': 'Mozilla/5.0 (compatible; SeonguiLibrarySearch/5.3.4; +https://seongui-library-search.vercel.app)'
+      },
+      cache: 'no-store',
+      signal: controller.signal
+    });
+  } finally { clearTimeout(timer); }
+
+  const raw = await response.text();
+  if (!response.ok) throw new Error(`NLK HTTP ${response.status}: ${raw.slice(0, 500)}`);
+  let payload;
+  try { payload = JSON.parse(raw); }
+  catch { throw new Error(`NLK 응답 JSON 파싱 실패: ${raw.slice(0, 500)}`); }
+  const apiError = detectApiError(payload);
+  if (apiError) throw new Error(`NLK API ${apiError.code}: ${apiError.msg}`);
+  return payload;
+}
+
 async function updateState(sample) {
   try {
     const current = await get(STATE_PATH, { access: 'private', useCache: false });
@@ -108,7 +161,7 @@ async function updateState(sample) {
       api: '국립중앙도서관 소장자료 Open API',
       lastCheckedAt: new Date().toISOString(),
       testIsbn: TEST_ISBN,
-      parserVersion: '5.3.3',
+      parserVersion: '5.3.4',
       sampleTitle: sample?.title || null
     };
     await put(STATE_PATH, JSON.stringify(state, null, 2), {
@@ -137,67 +190,20 @@ export default async function handler(req, res) {
   }
 
   try {
-    const params = new URLSearchParams({
-      key,
-      apiType: 'json',
-      detailSearch: 'true',
-      isbnOp: 'isbn',
-      isbnCode: TEST_ISBN,
-      pageNum: '1',
-      pageSize: '10',
-      category: '도서'
-    });
+    // 1차: ISBN 상세검색. 소장자료 API 특성상 ISBN 검색 결과가 0건일 수 있음.
+    let payload = await callNlk(key, 'isbn');
+    const isbnTotal = numericTotal(payload);
+    let lookupMode = 'isbn';
 
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 12000);
-    let response;
-    try {
-      response = await fetch(`https://www.nl.go.kr/NL/search/openApi/search.do?${params.toString()}`, {
-        headers: {
-          Accept: 'application/json,text/plain,*/*',
-          'User-Agent': 'Mozilla/5.0 (compatible; SeonguiLibrarySearch/5.3.3; +https://seongui-library-search.vercel.app)'
-        },
-        cache: 'no-store',
-        signal: controller.signal
-      });
-    } finally {
-      clearTimeout(timer);
-    }
-
-    const raw = await response.text();
-    if (!response.ok) {
-      return res.status(502).json({
-        ok: false,
-        code: 'NLK_HTTP_ERROR',
-        message: `국립중앙도서관 소장자료 API가 HTTP ${response.status}를 반환했습니다.`,
-        detail: raw.slice(0, 1200)
-      });
-    }
-
-    let payload;
-    try {
-      payload = JSON.parse(raw);
-    } catch {
-      return res.status(502).json({
-        ok: false,
-        code: 'NLK_NOT_JSON',
-        message: '국립중앙도서관 API 응답을 JSON으로 읽지 못했습니다.',
-        detail: raw.slice(0, 1200)
-      });
-    }
-
-    const apiError = detectApiError(payload);
-    if (apiError) {
-      return res.status(502).json({
-        ok: false,
-        code: `NLK_${apiError.code}`,
-        message: `국립중앙도서관 API 오류 ${apiError.code}: ${apiError.msg}`,
-        detail: JSON.stringify(payload).slice(0, 1200)
-      });
+    // ISBN 0건이면 같은 책 제목으로 한 번 더 확인한다.
+    // 이는 "연결/파싱 실패"와 "국립중앙도서관 소장검색 0건"을 구분하기 위한 안전장치다.
+    if (isbnTotal === 0) {
+      payload = await callNlk(key, 'title');
+      lookupMode = 'title-fallback';
     }
 
     const target = normalizeIsbn(TEST_ISBN);
-    const record = findIsbnContainer(payload, target);
+    const record = findIsbnContainer(payload, target) || firstResultRecord(payload);
     const sample = {
       title: fieldFrom(record, payload, 'title_info'),
       author: fieldFrom(record, payload, 'author_info'),
@@ -212,25 +218,45 @@ export default async function handler(req, res) {
     };
 
     const meaningful = [sample.title, sample.author, sample.publisher].filter(Boolean).length;
+    const finalTotal = numericTotal(payload);
+    if (finalTotal === 0) {
+      return res.status(200).json({
+        ok: true,
+        connected: true,
+        recordFound: false,
+        message: '국립중앙도서관 API 연결은 정상입니다. 다만 테스트 도서는 소장자료 검색 결과가 0건입니다.',
+        testIsbn: TEST_ISBN,
+        testTitle: TEST_TITLE,
+        isbnSearchTotal: isbnTotal,
+        lookupMode
+      });
+    }
     if (meaningful === 0) {
       return res.status(502).json({
         ok: false,
         code: 'NLK_PARSE_INCOMPLETE',
-        message: 'API 연결은 정상이나 서지 필드 파싱이 아직 완전하지 않습니다.',
+        message: 'API 연결과 검색 결과는 정상이나 실제 result 레코드의 필드 파싱을 더 보완해야 합니다.',
         detail: JSON.stringify({
+          isbnSearchTotal: isbnTotal,
+          finalTotal,
+          lookupMode,
           topLevelKeys: Object.keys(payload || {}),
+          resultPreview: payload?.result,
           titleValues: findValuesByKey(payload, 'title_info').slice(0, 3),
           authorValues: findValuesByKey(payload, 'author_info').slice(0, 3),
           isbnValues: findValuesByKey(payload, 'isbn').slice(0, 3)
-        }).slice(0, 3000)
+        }).slice(0, 5000)
       });
     }
 
     const stateUpdated = await updateState(sample);
     return res.status(200).json({
       ok: true,
-      message: '국립중앙도서관 소장자료 Open API 연결 및 서지정보 파싱이 정상입니다.',
+      message: lookupMode === 'isbn' ? '국립중앙도서관 소장자료 Open API의 ISBN 조회와 서지정보 파싱이 정상입니다.' : '국립중앙도서관 API 연결은 정상이며, ISBN 0건 후 제목 검색으로 서지정보를 확인했습니다.',
       testIsbn: TEST_ISBN,
+      testTitle: TEST_TITLE,
+      isbnSearchTotal: isbnTotal,
+      lookupMode,
       sample,
       stateUpdated
     });
