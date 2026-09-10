@@ -4,7 +4,7 @@ import { requireAdmin } from './_admin-auth.mjs';
 const TEST_ISBN = '9791191824001'; // 지구 끝의 온실
 const TEST_TITLE = '지구 끝의 온실';
 const STATE_PATH = 'schools/seongui-high/state/system-state.json';
-const CODE_VERSION = 'V5.3.5';
+const CODE_VERSION = 'V5.4';
 
 function primitiveText(v, depth = 0) {
   if (v == null || depth > 8) return '';
@@ -162,7 +162,7 @@ async function updateState(sample) {
       api: '국립중앙도서관 소장자료 Open API',
       lastCheckedAt: new Date().toISOString(),
       testIsbn: TEST_ISBN,
-      parserVersion: '5.3.5',
+      parserVersion: '5.4',
       sampleTitle: sample?.title || null
     };
     await put(STATE_PATH, JSON.stringify(state, null, 2), {
@@ -207,16 +207,16 @@ export default async function handler(req, res) {
     const target = normalizeIsbn(TEST_ISBN);
     const record = findIsbnContainer(payload, target) || firstResultRecord(payload);
     const sample = {
-      title: fieldFrom(record, payload, 'title_info'),
-      author: fieldFrom(record, payload, 'author_info'),
-      publisher: fieldFrom(record, payload, 'pub_info'),
-      year: fieldFrom(record, payload, 'pub_year_info'),
+      title: fieldFrom(record, payload, 'titleInfo'),
+      author: fieldFrom(record, payload, 'authorInfo'),
+      publisher: fieldFrom(record, payload, 'pubInfo'),
+      year: fieldFrom(record, payload, 'pubYearInfo'),
       isbn: fieldFrom(record, payload, 'isbn') || TEST_ISBN,
-      callNo: fieldFrom(record, payload, 'call_no'),
-      kdcCode: fieldFrom(record, payload, 'kdc_code_1s'),
-      kdcName: fieldFrom(record, payload, 'kdc_name_1s'),
-      controlNo: fieldFrom(record, payload, 'control_no'),
-      detailLink: fieldFrom(record, payload, 'detail_link')
+      callNo: fieldFrom(record, payload, 'callNo'),
+      kdcCode: fieldFrom(record, payload, 'classNo'),
+      kdcName: fieldFrom(record, payload, 'kdcName1s'),
+      controlNo: fieldFrom(record, payload, 'controlNo'),
+      detailLink: fieldFrom(record, payload, 'detailLink')
     };
 
     const meaningful = [sample.title, sample.author, sample.publisher].filter(Boolean).length;
@@ -246,8 +246,8 @@ export default async function handler(req, res) {
           lookupMode,
           topLevelKeys: Object.keys(payload || {}),
           resultPreview: payload?.result,
-          titleValues: findValuesByKey(payload, 'title_info').slice(0, 3),
-          authorValues: findValuesByKey(payload, 'author_info').slice(0, 3),
+          titleValues: findValuesByKey(payload, 'titleInfo').slice(0, 3),
+          authorValues: findValuesByKey(payload, 'authorInfo').slice(0, 3),
           isbnValues: findValuesByKey(payload, 'isbn').slice(0, 3)
         }).slice(0, 5000)
       });
