@@ -1,5 +1,5 @@
 import { put, get, del } from '@vercel/blob';
-import { requireAdmin } from './_admin-auth.mjs';
+import { requireAdmin } from '../lib/admin-auth.mjs';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {

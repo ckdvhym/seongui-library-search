@@ -1,6 +1,6 @@
-import { requireAdmin } from './_admin-auth.mjs';
-import { readJson,writeJson,PATHS,chunkPath } from './_storage.mjs';
-import { deriveProfile,cleanText } from './_profile.mjs';
+import { requireAdmin } from '../lib/admin-auth.mjs';
+import { readJson,writeJson,PATHS,chunkPath } from '../lib/storage.mjs';
+import { deriveProfile,cleanText } from '../lib/profile.mjs';
 const BATCH=80;
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 function isbn(v){const x=String(v||'').replace(/[^0-9Xx]/g,'');return x.length===13?x:'';}

@@ -1,5 +1,5 @@
-import { readJson,PATHS } from './_storage.mjs';
-import { interpretLocal,scoreRecord } from './_profile.mjs';
+import { readJson,PATHS } from '../lib/storage.mjs';
+import { interpretLocal,scoreRecord } from '../lib/profile.mjs';
 async function geminiIntent(q,base){
  const key=process.env.GEMINI_API_KEY;if(!key||!base.complex)return base;
  try{

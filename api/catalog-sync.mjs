@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 import { get, put } from '@vercel/blob';
-import { requireAdmin } from './_admin-auth.mjs';
+import { requireAdmin } from '../lib/admin-auth.mjs';
 
 const CATALOG_PATH = 'schools/seongui-high/catalog/base-catalog.json';
 const STATE_PATH = 'schools/seongui-high/state/system-state.json';

@@ -1,6 +1,6 @@
-import { requireAdmin } from './_admin-auth.mjs';
-import { readJson,writeJson,PATHS,chunkPath } from './_storage.mjs';
-import { deriveProfile } from './_profile.mjs';
+import { requireAdmin } from '../lib/admin-auth.mjs';
+import { readJson,writeJson,PATHS,chunkPath } from '../lib/storage.mjs';
+import { deriveProfile } from '../lib/profile.mjs';
 const BATCH=80;
 export default async function handler(req,res){
  if(req.method!=='POST')return res.status(405).json({ok:false,message:'POST 요청만 허용됩니다.'});if(!requireAdmin(req,res))return;

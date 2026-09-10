@@ -1,4 +1,4 @@
-import { requireAdmin } from './_admin-auth.mjs';
+import { requireAdmin } from '../lib/admin-auth.mjs';
 const TEST_ISBN='9791191824001';
 export default async function handler(req,res){
  if(req.method!=='POST')return res.status(405).json({ok:false,message:'POST 요청만 허용됩니다.'});

@@ -1,5 +1,5 @@
-import { requireAdmin } from './_admin-auth.mjs';
-import { readJson,PATHS } from './_storage.mjs';
+import { requireAdmin } from '../lib/admin-auth.mjs';
+import { readJson,PATHS } from '../lib/storage.mjs';
 export default async function handler(req,res){
  if(req.method!=='GET')return res.status(405).json({ok:false,message:'GET 요청만 허용됩니다.'});
  if(!requireAdmin(req,res))return;

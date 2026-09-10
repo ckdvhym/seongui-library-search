@@ -1,5 +1,5 @@
 import { put } from '@vercel/blob';
-import { requireAdmin } from './_admin-auth.mjs';
+import { requireAdmin } from '../lib/admin-auth.mjs';
 
 function getOrigin(req) {
   const protoHeader = req.headers?.['x-forwarded-proto'];
