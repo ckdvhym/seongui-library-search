@@ -1,28 +1,38 @@
 import { put } from '@vercel/blob';
 import { requireAdmin } from './_admin-auth.mjs';
 
-async function fetchStatic(request, pathname) {
-  const url = new URL(pathname, request.url);
-  const res = await fetch(url, { cache: 'no-store' });
-  if (!res.ok || !res.body) {
-    throw new Error(`${pathname} 파일을 읽지 못했습니다. HTTP ${res.status}`);
-  }
-  return res;
+function getOrigin(req) {
+  const protoHeader = req.headers?.['x-forwarded-proto'];
+  const proto = Array.isArray(protoHeader) ? protoHeader[0] : (protoHeader || 'https');
+  const hostHeader = req.headers?.['x-forwarded-host'] || req.headers?.host;
+  const host = Array.isArray(hostHeader) ? hostHeader[0] : hostHeader;
+  if (!host) throw new Error('현재 배포 주소를 확인하지 못했습니다.');
+  return `${proto}://${host}`;
 }
 
-export default async function handler(request) {
-  if (request.method !== 'POST') {
-    return Response.json({ ok: false, message: 'POST 요청만 허용됩니다.' }, { status: 405 });
+async function fetchStatic(origin, pathname) {
+  const response = await fetch(`${origin}${pathname}`, { cache: 'no-store' });
+  if (!response.ok || !response.body) {
+    throw new Error(`${pathname} 파일을 읽지 못했습니다. HTTP ${response.status}`);
   }
+  return response;
+}
 
-  const auth = requireAdmin(request);
-  if (!auth.ok) return auth.response;
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ ok: false, message: 'POST 요청만 허용됩니다.' });
+  }
+  if (!requireAdmin(req, res)) return;
 
   try {
-    // 7MB 카탈로그를 브라우저 → 함수로 다시 올리지 않고,
-    // 배포된 정적 파일을 서버가 직접 읽어 Blob으로 스트리밍합니다.
-    const catalogRes = await fetchStatic(request, '/data/base-catalog.json');
-    const configRes = await fetchStatic(request, '/school-config.json');
+    const origin = getOrigin(req);
+
+    // 큰 카탈로그를 브라우저에서 함수로 업로드하지 않고,
+    // 현재 배포의 정적 파일을 서버가 직접 읽어 Blob으로 보냅니다.
+    const [catalogRes, configRes] = await Promise.all([
+      fetchStatic(origin, '/data/base-catalog.json'),
+      fetchStatic(origin, '/school-config.json')
+    ]);
 
     const [catalogBlob, configBlob] = await Promise.all([
       put('schools/seongui-high/catalog/base-catalog.json', catalogRes.body, {
@@ -74,7 +84,7 @@ export default async function handler(request) {
       }
     );
 
-    return Response.json({
+    return res.status(200).json({
       ok: true,
       message: '성의고 V5 기본 데이터가 Vercel Blob에 영구 저장되었습니다.',
       catalog: { pathname: catalogBlob.pathname, etag: catalogBlob.etag },
@@ -82,11 +92,11 @@ export default async function handler(request) {
       state: { pathname: stateBlob.pathname, etag: stateBlob.etag }
     });
   } catch (error) {
-    return Response.json({
+    return res.status(500).json({
       ok: false,
       code: 'INIT_FAILED',
       message: '초기 저장에 실패했습니다.',
-      detail: String(error?.message || error)
-    }, { status: 500 });
+      detail: String(error?.stack || error?.message || error)
+    });
   }
 }
