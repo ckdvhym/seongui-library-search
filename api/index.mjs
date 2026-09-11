@@ -9,6 +9,7 @@ import metadataRun from '../lib/routes/metadata-run.mjs';
 import metadataBuildIndex from '../lib/routes/metadata-build-index.mjs';
 import bookDetail from '../lib/routes/book-detail.mjs';
 import search from '../lib/routes/search.mjs';
+import schoolSettings from '../lib/routes/school-settings.mjs';
 
 const ROUTES = {
   'storage-status': storageStatus,
@@ -22,6 +23,7 @@ const ROUTES = {
   'metadata-build-index': metadataBuildIndex,
   'book-detail': bookDetail,
   'search': search,
+  'school-settings': schoolSettings,
 };
 
 export default async function handler(req, res) {

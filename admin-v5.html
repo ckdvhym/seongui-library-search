@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>성의고 도서관 통합 관리 V6</title>
+<title>성의고 도서관 통합 관리 V8.4</title>
 <style>
   :root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#171717;background:#f6f7f9}
   *{box-sizing:border-box} body{margin:0} .wrap{max-width:900px;margin:0 auto;padding:40px 20px 80px}
@@ -16,13 +16,13 @@
   .status{font-size:15px;line-height:1.65;padding:14px;border-radius:12px;background:#f5f6f8;white-space:pre-wrap}
   .ok{background:#eef9f1}.bad{background:#fff0f0}.warn{background:#fff8e5}
   .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.metric{background:#f7f8fa;border-radius:12px;padding:15px}.metric b{font-size:22px;display:block;margin-top:4px}
-  .future{opacity:.62}.small{font-size:13px;color:#777;line-height:1.55}.step{font-weight:800;margin-bottom:8px}
+  .future{opacity:.62}.small{font-size:13px;color:#777;line-height:1.55}.step{font-weight:800;margin-bottom:8px}.logo-preview{display:flex;align-items:center;gap:10px;min-height:44px}.logo-preview img{height:24px;width:auto;max-width:70px;object-fit:contain}.logo-preview .school-label{font-weight:800;font-size:15px}.logo-none{color:#999;font-size:13px}
   @media(max-width:650px){.grid{grid-template-columns:1fr}.wrap{padding-top:24px}}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>성의고 도서관 통합 관리 V6</h1>
+  <h1>성의고 도서관 통합 관리 V8.4</h1>
   <p class="sub">장서 동기화부터 메타데이터 구축·검색 인덱스 생성까지 한 화면에서 관리합니다. 작업 결과는 배치마다 서버에 저장되어 중간에 닫혀도 이어서 진행할 수 있습니다.</p>
 
   <div class="card">
@@ -62,7 +62,20 @@
 
 
   <div class="card">
-    <div class="step">5. 장서자료 업데이트 <span style="font-size:12px;font-weight:600;color:#6b7280">(V8.3)</span></div>
+    <div class="step">학교 로고 설정 <span style="font-size:12px;font-weight:600;color:#6b7280">(선택)</span></div>
+    <p class="small">로고를 등록하면 학생용 첫 화면과 주제검색 화면의 ‘성의고등학교 도서관’ 왼쪽에 작게 표시됩니다. 등록하지 않으면 지금처럼 글자만 보여서 깔끔하게 유지됩니다.</p>
+    <div id="logoPreview" class="logo-preview" style="margin:12px 0 14px"><span class="logo-none">현재 로고를 확인하려면 관리자 암호 입력 후 ‘로고 설정 불러오기’를 눌러 주세요.</span></div>
+    <div class="row">
+      <input id="logoFile" type="file" accept="image/png,image/jpeg,image/webp" class="grow" style="padding:10px;background:white;border:1px solid #d1d5db;border-radius:10px">
+      <button id="logoLoadBtn" class="secondary">로고 설정 불러오기</button>
+      <button id="logoSaveBtn">선택한 로고 저장</button>
+      <button id="logoDeleteBtn" class="secondary">로고 삭제</button>
+    </div>
+    <div id="logoStatus" class="status warn" style="margin-top:12px">로고는 아직 확인하지 않았습니다.</div>
+  </div>
+
+  <div class="card">
+    <div class="step">5. 장서자료 업데이트 <span style="font-size:12px;font-weight:600;color:#6b7280">(V8.4)</span></div>
     <p class="small">DLS에서 반출한 엑셀(.xlsx)을 올리면 기존 서버 장서와 먼저 비교합니다. <b>비교만 할 때는 데이터가 바뀌지 않습니다.</b></p>
     <div class="row" style="margin-bottom:12px">
       <select id="syncMode" style="padding:12px;border:1px solid #d1d5db;border-radius:10px">
@@ -78,7 +91,7 @@
 
 
   <div class="card">
-    <div class="step">6. 통합 검색 데이터 구축 <span style="font-size:12px;font-weight:600;color:#6b7280">(V8.3)</span></div>
+    <div class="step">6. 통합 검색 데이터 구축 <span style="font-size:12px;font-weight:600;color:#6b7280">(V8.4)</span></div>
     <p class="small">YES24 상세정보를 장서별로 수집하고, 필요한 경우 국립중앙도서관으로 보완한 뒤 주제·장르·키워드 프로필과 학생용 검색 인덱스를 만듭니다. <b>한 번 시작하면 배치마다 서버에 저장</b>되므로 중간에 창을 닫아도 다음에 이어서 할 수 있습니다.</p>
     <div class="grid" style="margin:14px 0">
       <div class="metric">처리 완료<b id="metaProcessed">-</b></div>
@@ -116,6 +129,36 @@ async function api(path, options={}){
   if(!r.ok) throw new Error((j.message||`HTTP ${r.status}`)+(j.detail?'\n'+j.detail:'')+(j.env?'\n환경 확인: '+JSON.stringify(j.env):''));
   return j;
 }
+function renderLogoPreview(data){
+  const box=$('logoPreview');
+  if(data?.logoDataUrl){
+    box.innerHTML=`<img src="${data.logoDataUrl}" alt="학교 로고"><span class="school-label">${data.schoolName||'성의고등학교 도서관'}</span>`;
+  }else{
+    box.innerHTML=`<span class="school-label">${data?.schoolName||'성의고등학교 도서관'}</span><span class="logo-none">(로고 없음)</span>`;
+  }
+}
+async function loadLogoSettings(){
+  const box=$('logoStatus'); box.className='status warn'; box.textContent='로고 설정을 불러오는 중…';
+  try{const j=await api('/api/index?route=school-settings');renderLogoPreview(j);box.className='status ok';box.textContent=j.logoDataUrl?'현재 저장된 로고가 있습니다.':'현재 저장된 로고가 없습니다. 글자만 표시됩니다.';return j;}
+  catch(e){box.className='status bad';box.textContent=e.message;throw e;}
+}
+$('logoLoadBtn').onclick=()=>loadLogoSettings().catch(()=>{});
+$('logoSaveBtn').onclick=async()=>{
+  const f=$('logoFile').files[0]; if(!f){$('logoStatus').className='status bad';$('logoStatus').textContent='저장할 로고 이미지(PNG/JPG/WebP)를 먼저 선택해 주세요.';return;}
+  if(f.size>200*1024){$('logoStatus').className='status bad';$('logoStatus').textContent='로고는 200KB 이하 이미지를 사용해 주세요.';return;}
+  const ok=/^image\/(png|jpeg|webp)$/i.test(f.type); if(!ok){$('logoStatus').className='status bad';$('logoStatus').textContent='PNG, JPG, WebP 이미지만 사용할 수 있습니다.';return;}
+  const dataUrl=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result||''));r.onerror=reject;r.readAsDataURL(f);});
+  const box=$('logoStatus');box.className='status warn';box.textContent='로고를 저장하는 중…';
+  try{const j=await api('/api/index?route=school-settings',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({logoDataUrl:dataUrl})});renderLogoPreview(j);box.className='status ok';box.textContent='저장했습니다. 학생용 화면을 새로고침하면 로고가 표시됩니다.';}
+  catch(e){box.className='status bad';box.textContent=e.message;}
+};
+$('logoDeleteBtn').onclick=async()=>{
+  if(!confirm('학교 로고를 삭제하고 글자만 표시할까요?'))return;
+  const box=$('logoStatus');box.className='status warn';box.textContent='로고를 삭제하는 중…';
+  try{const j=await api('/api/index?route=school-settings',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({logoDataUrl:''})});renderLogoPreview(j);$('logoFile').value='';box.className='status ok';box.textContent='로고를 삭제했습니다. 이제 글자만 표시됩니다.';}
+  catch(e){box.className='status bad';box.textContent=e.message;}
+};
+
 async function check(){
   setStatus('확인 중…');
   try{
