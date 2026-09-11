@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>성의고 도서관 통합 관리 V8.6</title>
+<title>성의고 도서관 통합 관리 V8.8</title>
 <style>
   :root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#171717;background:#f6f7f9}
   *{box-sizing:border-box} body{margin:0} .wrap{max-width:900px;margin:0 auto;padding:40px 20px 80px}
@@ -22,7 +22,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>성의고 도서관 통합 관리 V8.6</h1>
+  <h1>성의고 도서관 통합 관리 V8.8</h1>
   <p class="sub">장서 동기화부터 메타데이터 구축·검색 인덱스 생성까지 한 화면에서 관리합니다. 작업 결과는 배치마다 서버에 저장되어 중간에 닫혀도 이어서 진행할 수 있습니다.</p>
 
   <div class="card">
@@ -75,7 +75,7 @@
   </div>
 
   <div class="card">
-    <div class="step">5. 장서자료 업데이트 <span style="font-size:12px;font-weight:600;color:#6b7280">(운영 V8.6)</span></div>
+    <div class="step">5. 장서자료 업데이트 <span style="font-size:12px;font-weight:600;color:#6b7280">(운영 V8.8)</span></div>
     <p class="small">DLS에서 반출한 엑셀(.xlsx)을 올리면 기존 서버 장서와 먼저 비교합니다. <b>비교만 할 때는 데이터가 바뀌지 않습니다.</b></p>
     <div class="row" style="margin-bottom:12px">
       <select id="syncMode" style="padding:12px;border:1px solid #d1d5db;border-radius:10px">
@@ -91,7 +91,7 @@
 
 
   <div class="card">
-    <div class="step">6. 통합 검색 데이터 구축 <span style="font-size:12px;font-weight:600;color:#6b7280">(운영 V8.6)</span></div>
+    <div class="step">6. 통합 검색 데이터 구축 <span style="font-size:12px;font-weight:600;color:#6b7280">(운영 V8.8)</span></div>
     <p class="small">YES24 상세정보를 장서별로 수집하고, 필요한 경우 국립중앙도서관으로 보완한 뒤 주제·장르·키워드 프로필과 학생용 검색 인덱스를 만듭니다. <b>한 번 시작하면 배치마다 서버에 저장</b>되므로 중간에 창을 닫아도 다음에 이어서 할 수 있습니다.</p>
     <div class="grid" style="margin:14px 0">
       <div class="metric">처리 완료<b id="metaProcessed">-</b></div>
