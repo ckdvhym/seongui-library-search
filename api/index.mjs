@@ -10,6 +10,14 @@ import metadataBuildIndex from '../lib/routes/metadata-build-index.mjs';
 import bookDetail from '../lib/routes/book-detail.mjs';
 import search from '../lib/routes/search.mjs';
 import schoolSettings from '../lib/routes/school-settings.mjs';
+import recommendations from '../lib/routes/recommendations.mjs';
+import discovery from '../lib/routes/discovery.mjs';
+import analyticsLog from '../lib/routes/analytics-log.mjs';
+import analyticsAdmin from '../lib/routes/analytics-admin.mjs';
+import health from '../lib/routes/health.mjs';
+import acquisitionBox from '../lib/routes/acquisition-box.mjs';
+import backup from '../lib/routes/backup.mjs';
+import history from '../lib/routes/history.mjs';
 
 const ROUTES = {
   'storage-status': storageStatus,
@@ -24,6 +32,14 @@ const ROUTES = {
   'book-detail': bookDetail,
   'search': search,
   'school-settings': schoolSettings,
+  'recommendations': recommendations,
+  'discovery': discovery,
+  'analytics-log': analyticsLog,
+  'analytics-admin': analyticsAdmin,
+  'health': health,
+  'acquisition-box': acquisitionBox,
+  'backup': backup,
+  'history': history,
 };
 
 export default async function handler(req, res) {

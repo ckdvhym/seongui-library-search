@@ -1,264 +1,48 @@
-<!doctype html>
-<html lang="ko">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>성의고 도서관 통합 관리 V8.8</title>
-<style>
-  :root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#171717;background:#f6f7f9}
-  *{box-sizing:border-box} body{margin:0} .wrap{max-width:900px;margin:0 auto;padding:40px 20px 80px}
-  h1{font-size:28px;margin:0 0 8px} .sub{color:#666;margin:0 0 28px;line-height:1.6}
-  .card{background:#fff;border:1px solid #e6e6e6;border-radius:18px;padding:22px;margin:16px 0;box-shadow:0 4px 16px rgba(0,0,0,.035)}
-  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}.grow{flex:1 1 300px}
-  input{width:100%;padding:12px 14px;border:1px solid #ccc;border-radius:10px;font-size:15px}
-  button{border:0;border-radius:10px;padding:12px 16px;font-weight:700;cursor:pointer;background:#191919;color:white}
-  button.secondary{background:#eceef1;color:#222} button:disabled{opacity:.45;cursor:not-allowed}
-  .status{font-size:15px;line-height:1.65;padding:14px;border-radius:12px;background:#f5f6f8;white-space:pre-wrap}
-  .ok{background:#eef9f1}.bad{background:#fff0f0}.warn{background:#fff8e5}
-  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.metric{background:#f7f8fa;border-radius:12px;padding:15px}.metric b{font-size:22px;display:block;margin-top:4px}
-  .future{opacity:.62}.small{font-size:13px;color:#777;line-height:1.55}.step{font-weight:800;margin-bottom:8px}.logo-preview{display:flex;align-items:center;gap:10px;min-height:44px}.logo-preview img{height:24px;width:auto;max-width:70px;object-fit:contain}.logo-preview .school-label{font-weight:800;font-size:15px}.logo-none{color:#999;font-size:13px}
-  @media(max-width:650px){.grid{grid-template-columns:1fr}.wrap{padding-top:24px}}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <h1>성의고 도서관 통합 관리 V8.8</h1>
-  <p class="sub">장서 동기화부터 메타데이터 구축·검색 인덱스 생성까지 한 화면에서 관리합니다. 작업 결과는 배치마다 서버에 저장되어 중간에 닫혀도 이어서 진행할 수 있습니다.</p>
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>학교도서관 통합 관리 V9.0</title><style>
+:root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#171717;background:#f5f7fa;--blue:#4f6ed6;--line:#e3e6eb;--muted:#70757d}*{box-sizing:border-box}body{margin:0}.shell{max-width:1180px;margin:0 auto;padding:32px 20px 80px}header h1{font-size:29px;margin:0 0 7px}header p{margin:0;color:#68707a;line-height:1.55}.auth{margin-top:22px;background:#fff;border:1px solid var(--line);border-radius:15px;padding:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}.auth input{flex:1 1 320px}.tabs{display:flex;gap:8px;overflow:auto;margin:22px 0 16px;padding-bottom:4px}.tab{border:1px solid #dfe3ea;background:#fff;color:#4c525a;border-radius:999px;padding:9px 13px;font-weight:750;white-space:nowrap;cursor:pointer}.tab.active{background:var(--blue);color:#fff;border-color:var(--blue)}.panel{display:none}.panel.active{display:block}.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:21px;margin:14px 0;box-shadow:0 4px 18px rgba(25,39,77,.025)}h2{font-size:21px;margin:0 0 5px}.small{font-size:13px;color:#737a83;line-height:1.6}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.metric{background:#f7f8fb;border-radius:11px;padding:14px}.metric span{display:block;color:#767d87;font-size:12px}.metric b{font-size:21px;display:block;margin-top:4px}.status{font-size:14px;line-height:1.6;padding:12px 14px;border-radius:10px;background:#f4f5f7;white-space:pre-wrap}.status.ok{background:#edf8f0}.status.warn{background:#fff8e4}.status.bad{background:#fff0f0}input,select,textarea{border:1px solid #cfd4dc;border-radius:9px;padding:11px 12px;font:inherit;background:#fff}input[type=text],input[type=password],input[type=url],textarea{width:100%}.field{flex:1 1 230px}.field label,.toggle-box label{display:block;font-size:12px;color:#6f7680;margin:0 0 5px;font-weight:750}button,.button{border:0;border-radius:9px;padding:11px 14px;font-weight:800;cursor:pointer;background:#1c1d1f;color:#fff;text-decoration:none;font-size:14px}button.secondary,.button.secondary{background:#eef0f3;color:#23262a}button.blue{background:var(--blue)}button:disabled{opacity:.45;cursor:not-allowed}.section-title{font-weight:850;margin:0 0 10px}.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.toggle-box{border:1px solid #e5e7ec;border-radius:10px;padding:12px}.toggle-box input{width:auto}.list{display:grid;gap:9px}.list-item{border:1px solid #e6e8ed;border-radius:11px;padding:13px;display:flex;gap:12px;justify-content:space-between;align-items:flex-start}.list-item b{font-size:14px}.list-item .meta{font-size:12px;color:#777;margin-top:4px;line-height:1.5}.table{width:100%;border-collapse:collapse;font-size:13px}.table th,.table td{border-bottom:1px solid #eceef2;padding:9px 7px;text-align:left;vertical-align:top}.table th{color:#69707a;font-size:12px}.logo-preview{display:flex;align-items:center;gap:10px;min-height:40px}.logo-preview img{height:24px;max-width:70px;object-fit:contain}.color-row{display:flex;align-items:center;gap:10px}.color-row input[type=color]{width:52px;height:40px;padding:2px}.hidden{display:none!important}.preview-link{display:inline-block;margin-top:10px;color:var(--blue);text-decoration:none;font-weight:800;font-size:13px}
+@media(max-width:820px){.grid{grid-template-columns:repeat(2,1fr)}.feature-grid{grid-template-columns:1fr 1fr}}@media(max-width:560px){.shell{padding:20px 12px 60px}.grid,.feature-grid{grid-template-columns:1fr}.list-item{display:block}.list-item .row{margin-top:8px}}
+</style></head><body><div class="shell"><header><h1>학교도서관 통합 관리 V9.0</h1><p>검색 코어는 V8.8 안정판을 유지하고, 추천·탐색·건강검진·수서 지원 기능을 관리합니다.</p></header>
+<div class="auth"><div class="field"><label class="small">관리자 암호</label><input id="secret" type="password" autocomplete="current-password" placeholder="Vercel의 ADMIN_SETUP_SECRET"></div><button id="healthQuick" class="blue">전체 상태 확인</button><a class="button secondary" href="/" target="_blank">학생 화면 미리보기</a></div>
+<nav class="tabs"><button class="tab active" data-panel="dashboard">대시보드</button><button class="tab" data-panel="data">도서 데이터</button><button class="tab" data-panel="recommend">추천도서</button><button class="tab" data-panel="search">검색 관리</button><button class="tab" data-panel="insight">이용·수서</button><button class="tab" data-panel="settings">학교·기능 설정</button><button class="tab" data-panel="backup">백업·이력</button></nav>
 
-  <div class="card">
-    <div class="step">1. 관리자 암호</div>
-    <div class="row">
-      <div class="grow"><input id="secret" type="password" autocomplete="current-password" placeholder="Vercel에 설정한 ADMIN_SETUP_SECRET" /></div>
-      <button class="secondary" id="probeBtn">Blob 연결 테스트</button>
-      <button class="secondary" id="checkBtn">저장소 상태 확인</button>
-    </div>
-    <p class="small">암호는 이 화면에서 API 요청에만 사용하며 브라우저에 저장하지 않습니다.</p>
-  </div>
+<section id="dashboard" class="panel active"><div class="card"><h2>시스템 상태</h2><p class="small">문제가 없으면 이 화면만 확인해도 됩니다.</p><div class="grid" style="margin:14px 0"><div class="metric"><span>전체 상태</span><b id="dashStatus">-</b></div><div class="metric"><span>소장 자료</span><b id="dashCatalog">-</b></div><div class="metric"><span>회귀검사</span><b id="dashRegression">-</b></div><div class="metric"><span>검색 인덱스</span><b id="dashIndex">-</b></div></div><div id="dashMessage" class="status warn">관리자 암호 입력 후 ‘전체 상태 확인’을 눌러 주세요.</div></div><div class="card"><h2>최근 검색 흐름</h2><p class="small">학생 개인정보 없이 검색어만 익명으로 집계합니다.</p><div id="dashAnalytics" class="status warn">아직 확인하지 않았습니다.</div></div></section>
 
-  <div class="card">
-    <div class="step">2. 영구 저장 상태</div>
-    <div id="status" class="status warn">아직 확인하지 않았습니다.</div>
-    <div class="grid" style="margin-top:14px">
-      <div class="metric">기본 카탈로그<b id="catalogMetric">-</b></div>
-      <div class="metric">영구 저장소<b id="storageMetric">-</b></div>
-      <div class="metric">브라우저 의존<b id="browserMetric">없음</b></div>
-    </div>
-  </div>
+<section id="data" class="panel"><div class="card"><h2>장서자료 업데이트</h2><p class="small">DLS에서 반출한 엑셀을 먼저 비교한 뒤 확인된 내용만 반영합니다.</p><div class="row"><select id="syncMode"><option value="full">전체 소장자료 동기화</option><option value="add">신규 도서만 추가</option></select><input id="dlsFile" type="file" accept=".xlsx,.xls" class="field"><button id="previewBtn">업로드 내용 비교</button><button id="commitSyncBtn" class="blue" disabled>서버에 반영</button></div><div id="syncStatus" class="status warn" style="margin-top:12px">아직 비교하지 않았습니다.</div></div><div class="card"><h2>메타데이터·검색 인덱스</h2><div class="grid" style="margin:14px 0"><div class="metric"><span>처리 완료</span><b id="metaProcessed">-</b></div><div class="metric"><span>YES24 확인</span><b id="metaYes">-</b></div><div class="metric"><span>검색 준비</span><b id="indexReady">-</b></div><div class="metric"><span>최근 구축</span><b id="indexBuilt">-</b></div></div><div class="row"><button id="metaStartBtn">통합 구축 시작 / 이어하기</button><button id="metaStopBtn" class="secondary" disabled>일시정지</button><button id="metaStatusBtn" class="secondary">진행 상태 확인</button><button id="nlkBtn" class="secondary">NLK 연결 테스트</button></div><div id="metaStatus" class="status warn" style="margin-top:12px">아직 확인하지 않았습니다.</div></div></section>
 
-  <div class="card">
-    <div class="step">3. 성의고 V5 데이터 최초 저장</div>
-    <p class="small">현재 8,050종 기본 카탈로그와 학교 설정을 Vercel Blob에 저장합니다. 같은 파일을 다시 실행해도 덮어쓰기 방식이라 중복 저장되지 않습니다.</p>
-    <button id="initBtn">V5 기본 데이터 영구 저장</button>
-  </div>
+<section id="recommend" class="panel"><div class="card"><h2>추천목록 만들기</h2><p class="small">목록 전체 정보는 여기서 한 번만 입력하고, 책 목록은 엑셀로 올립니다. 학생 화면에는 소장도서만 노출됩니다.</p><div class="row"><div class="field"><label>목록명 *</label><input id="recName" type="text" placeholder="예: 1학년 국어 수행평가 도서"></div><div class="field"><label>구분</label><select id="recType"><option>교과연계</option><option>수행평가</option><option>진로연계</option><option>기관추천</option><option>사서추천</option><option>신간</option><option>행사·프로그램</option><option>기타</option></select></div></div><div class="row" style="margin-top:10px"><div class="field"><label>설명</label><input id="recDescription" type="text" placeholder="예: 1학년 국어과 독서 수행평가 활용"></div><div class="field"><label>공개 시작일</label><input id="recStart" type="date"></div><div class="field"><label>공개 종료일</label><input id="recEnd" type="date"></div></div><div class="row" style="margin-top:12px"><label><input id="recActive" type="checkbox" checked> 활성화</label><label><input id="recFeatured" type="checkbox" checked> 첫 화면 노출</label><button id="recSave" class="blue">추천목록 저장</button><button id="recNew" class="secondary">새 목록</button></div><input id="recId" type="hidden"><div id="recStatus" class="status warn" style="margin-top:12px">추천목록을 만들거나 기존 목록을 선택하세요.</div></div><div class="card"><h2>추천도서 엑셀</h2><div class="row"><button id="recTemplate" class="secondary">엑셀 양식 다운로드</button><input id="recFile" type="file" accept=".xlsx,.xls" class="field"><button id="recUpload">현재 목록에 업로드</button></div><p class="small">도서명은 필수, 저자·출판사·ISBN·개별 추천·선정 정보는 선택입니다. ISBN이 있으면 가장 정확하게 연결됩니다.</p></div><div class="card"><h2>등록된 추천목록</h2><div id="recLists" class="list"><div class="status warn">목록을 불러오지 않았습니다.</div></div></div></section>
 
-  <div class="card">
-    <div class="step">4. 국립중앙도서관 소장자료 API 연결 <span style="font-size:12px;font-weight:600;color:#6b7280">(코드 V5.4)</span></div>
-    <p class="small">Vercel에 설정한 NLK_API_KEY를 서버에서만 사용해 ISBN 서지정보 API를 확인합니다. 인증키는 브라우저에 노출하지 않습니다.</p>
-    <div class="row">
-      <button id="nlkBtn">국립중앙도서관 연결 테스트</button>
-      <div class="grow"><div id="nlkStatus" class="status warn">아직 확인하지 않았습니다.</div></div>
-    </div>
-  </div>
+<section id="search" class="panel"><div class="card"><h2>검색 건강검진</h2><p class="small">V8.8 회귀보호 테스트와 현재 검색 데이터 상태를 한 번에 확인합니다.</p><button id="healthBtn" class="blue">전체 검사 실행</button><div id="healthStatus" class="status warn" style="margin-top:12px">아직 검사하지 않았습니다.</div></div><div class="card"><h2>데이터 건강검진</h2><div class="grid"><div class="metric"><span>검색 자료</span><b id="hTotal">-</b></div><div class="metric"><span>ISBN</span><b id="hIsbn">-</b></div><div class="metric"><span>표지</span><b id="hCover">-</b></div><div class="metric"><span>책소개</span><b id="hIntro">-</b></div></div><div class="grid" style="margin-top:10px"><div class="metric"><span>목차</span><b id="hToc">-</b></div><div class="metric"><span>정보 부족</span><b id="hPoor">-</b></div></div></div></section>
 
+<section id="insight" class="panel"><div class="card"><h2>검색 이용 분석</h2><div class="row"><button id="analyticsBtn" class="blue">최근 30일 분석</button><button id="acqExport" class="secondary">수서 후보 엑셀</button></div><div id="analyticsStatus" class="status warn" style="margin-top:12px">아직 분석하지 않았습니다.</div><div id="gapTable" style="margin-top:14px"></div></div><div class="card"><h2>수서 후보함</h2><div id="acqList" class="list"><div class="status warn">아직 확인하지 않았습니다.</div></div></div></section>
 
-  <div class="card">
-    <div class="step">학교 로고 설정 <span style="font-size:12px;font-weight:600;color:#6b7280">(선택)</span></div>
-    <p class="small">로고를 등록하면 학생용 첫 화면과 주제검색 화면의 ‘성의고등학교 도서관’ 왼쪽에 작게 표시됩니다. 등록하지 않으면 지금처럼 글자만 보여서 깔끔하게 유지됩니다.</p>
-    <div id="logoPreview" class="logo-preview" style="margin:12px 0 14px"><span class="logo-none">현재 로고를 확인하려면 관리자 암호 입력 후 ‘로고 설정 불러오기’를 눌러 주세요.</span></div>
-    <div class="row">
-      <input id="logoFile" type="file" accept="image/png,image/jpeg,image/webp" class="grow" style="padding:10px;background:white;border:1px solid #d1d5db;border-radius:10px">
-      <button id="logoLoadBtn" class="secondary">로고 설정 불러오기</button>
-      <button id="logoSaveBtn">선택한 로고 저장</button>
-      <button id="logoDeleteBtn" class="secondary">로고 삭제</button>
-    </div>
-    <div id="logoStatus" class="status warn" style="margin-top:12px">로고는 아직 확인하지 않았습니다.</div>
-  </div>
+<section id="settings" class="panel"><div class="card"><h2>학교 기본 설정</h2><div class="row"><div class="field"><label>학교·도서관 표시명</label><input id="schoolName" type="text"></div><div class="field"><label>첫 화면 제목</label><input id="homeTitle" type="text"></div></div><div class="row" style="margin-top:10px"><div class="field"><label>독서로 학교검색 주소</label><input id="dlsUrl" type="url"></div><div class="field"><label>대표색</label><div class="color-row"><input id="accentColor" type="color" value="#4f6ed6"><span class="small">흰색 화면은 유지하고 강조색만 바뀝니다.</span></div></div></div><div class="section-title" style="margin-top:18px">학생 화면 기능</div><div class="feature-grid" id="featureGrid"></div><div class="row" style="margin-top:14px"><button id="settingsLoad" class="secondary">설정 불러오기</button><button id="settingsSave" class="blue">설정 저장</button></div><div id="settingsStatus" class="status warn" style="margin-top:12px">아직 불러오지 않았습니다.</div></div><div class="card"><h2>학교 로고</h2><div id="logoPreview" class="logo-preview"><span class="small">로고 없음</span></div><div class="row" style="margin-top:10px"><input id="logoFile" type="file" accept="image/png,image/jpeg,image/webp" class="field"><button id="logoSave">로고 저장</button><button id="logoDelete" class="secondary">로고 삭제</button></div></div><div class="card"><h2>행사 안내</h2><div class="row"><div class="field"><label>행사 제목</label><input id="eventTitle" type="text"></div><div class="field"><label>연결 주소(선택)</label><input id="eventUrl" type="url"></div></div><div style="margin-top:10px"><label class="small">간단한 안내</label><textarea id="eventDescription" rows="2"></textarea></div><label style="display:block;margin-top:10px"><input id="eventEnabled" type="checkbox"> 행사 안내 활성화</label></div></section>
 
-  <div class="card">
-    <div class="step">5. 장서자료 업데이트 <span style="font-size:12px;font-weight:600;color:#6b7280">(운영 V8.8)</span></div>
-    <p class="small">DLS에서 반출한 엑셀(.xlsx)을 올리면 기존 서버 장서와 먼저 비교합니다. <b>비교만 할 때는 데이터가 바뀌지 않습니다.</b></p>
-    <div class="row" style="margin-bottom:12px">
-      <select id="syncMode" style="padding:12px;border:1px solid #d1d5db;border-radius:10px">
-        <option value="full">전체 소장자료 동기화</option>
-        <option value="add">신규 도서만 추가</option>
-      </select>
-      <input id="dlsFile" type="file" accept=".xlsx,.xls" class="grow" style="padding:10px;background:white;border:1px solid #d1d5db;border-radius:10px">
-      <button id="previewBtn">업로드 내용 비교</button>
-    </div>
-    <div id="syncStatus" class="status warn">아직 엑셀을 비교하지 않았습니다.</div>
-    <div style="margin-top:12px"><button id="commitSyncBtn" disabled>확인한 내용 서버에 반영</button></div>
-  </div>
-
-
-  <div class="card">
-    <div class="step">6. 통합 검색 데이터 구축 <span style="font-size:12px;font-weight:600;color:#6b7280">(운영 V8.8)</span></div>
-    <p class="small">YES24 상세정보를 장서별로 수집하고, 필요한 경우 국립중앙도서관으로 보완한 뒤 주제·장르·키워드 프로필과 학생용 검색 인덱스를 만듭니다. <b>한 번 시작하면 배치마다 서버에 저장</b>되므로 중간에 창을 닫아도 다음에 이어서 할 수 있습니다.</p>
-    <div class="grid" style="margin:14px 0">
-      <div class="metric">처리 완료<b id="metaProcessed">-</b></div>
-      <div class="metric">YES24 확인<b id="metaYes">-</b></div>
-      <div class="metric">검색 준비<b id="indexReady">-</b></div>
-    </div>
-    <div class="row">
-      <button id="metaStartBtn">통합 구축 시작 / 이어하기</button>
-      <button id="metaStopBtn" class="secondary" disabled>일시정지</button>
-      <button id="metaStatusBtn" class="secondary">진행 상태 확인</button>
-      <a href="/topic-search.html" target="_blank" style="padding:12px 16px;border:1px solid #ddd;border-radius:10px;text-decoration:none;color:#222;font-weight:700">학생용 검색 화면</a>
-    </div>
-    <div id="metaStatus" class="status warn" style="margin-top:14px">아직 확인하지 않았습니다.</div>
-  </div>
-
-  <div class="card future">
-    <div class="step">다음 단계</div>
-    <p class="small">메타데이터 1차 구축이 끝나면 학생용 검색 화면을 바로 사용할 수 있습니다. 복잡한 자연어 검색은 필요할 때만 Gemini가 검색 의도 해석에 사용되며, 책 전체를 AI로 다시 처리하지 않습니다.</p>
-  </div>
-</div>
-<script>
-const $=id=>document.getElementById(id);
-function secret(){return $('secret').value.trim();}
-function setStatus(text, kind='warn'){$('status').className='status '+kind;$('status').textContent=text;}
-async function api(path, options={}){
-  const s=secret();
-  if(!s) throw new Error('관리자 암호를 입력해 주세요.');
-  const headers={...(options.headers||{}),'x-admin-secret':s};
-  const r=await fetch(path,{...options,headers});
-  const raw=await r.text();
-  let j;
-  try{j=raw?JSON.parse(raw):{};}catch{
-    throw new Error(`서버가 JSON이 아닌 응답을 보냈습니다. (HTTP ${r.status})\n${raw.slice(0,700) || '응답 내용 없음'}`);
-  }
-  if(!r.ok) throw new Error((j.message||`HTTP ${r.status}`)+(j.detail?'\n'+j.detail:'')+(j.env?'\n환경 확인: '+JSON.stringify(j.env):''));
-  return j;
-}
-function renderLogoPreview(data){
-  const box=$('logoPreview');
-  if(data?.logoDataUrl){
-    box.innerHTML=`<img src="${data.logoDataUrl}" alt="학교 로고"><span class="school-label">${data.schoolName||'성의고등학교 도서관'}</span>`;
-  }else{
-    box.innerHTML=`<span class="school-label">${data?.schoolName||'성의고등학교 도서관'}</span><span class="logo-none">(로고 없음)</span>`;
-  }
-}
-async function loadLogoSettings(){
-  const box=$('logoStatus'); box.className='status warn'; box.textContent='로고 설정을 불러오는 중…';
-  try{const j=await api('/api/index?route=school-settings');renderLogoPreview(j);box.className='status ok';box.textContent=j.logoDataUrl?'현재 저장된 로고가 있습니다.':'현재 저장된 로고가 없습니다. 글자만 표시됩니다.';return j;}
-  catch(e){box.className='status bad';box.textContent=e.message;throw e;}
-}
-$('logoLoadBtn').onclick=()=>loadLogoSettings().catch(()=>{});
-$('logoSaveBtn').onclick=async()=>{
-  const f=$('logoFile').files[0]; if(!f){$('logoStatus').className='status bad';$('logoStatus').textContent='저장할 로고 이미지(PNG/JPG/WebP)를 먼저 선택해 주세요.';return;}
-  if(f.size>200*1024){$('logoStatus').className='status bad';$('logoStatus').textContent='로고는 200KB 이하 이미지를 사용해 주세요.';return;}
-  const ok=/^image\/(png|jpeg|webp)$/i.test(f.type); if(!ok){$('logoStatus').className='status bad';$('logoStatus').textContent='PNG, JPG, WebP 이미지만 사용할 수 있습니다.';return;}
-  const dataUrl=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result||''));r.onerror=reject;r.readAsDataURL(f);});
-  const box=$('logoStatus');box.className='status warn';box.textContent='로고를 저장하는 중…';
-  try{const j=await api('/api/index?route=school-settings',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({logoDataUrl:dataUrl})});renderLogoPreview(j);box.className='status ok';box.textContent='저장했습니다. 학생용 화면을 새로고침하면 로고가 표시됩니다.';}
-  catch(e){box.className='status bad';box.textContent=e.message;}
-};
-$('logoDeleteBtn').onclick=async()=>{
-  if(!confirm('학교 로고를 삭제하고 글자만 표시할까요?'))return;
-  const box=$('logoStatus');box.className='status warn';box.textContent='로고를 삭제하는 중…';
-  try{const j=await api('/api/index?route=school-settings',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({logoDataUrl:''})});renderLogoPreview(j);$('logoFile').value='';box.className='status ok';box.textContent='로고를 삭제했습니다. 이제 글자만 표시됩니다.';}
-  catch(e){box.className='status bad';box.textContent=e.message;}
-};
-
-async function check(){
-  setStatus('확인 중…');
-  try{
-    const j=await api('/api/index?route=storage-status');
-    $('storageMetric').textContent=j.storageConnected?'연결됨':'미연결';
-    $('catalogMetric').textContent=j.catalog?'저장됨':'미저장';
-    setStatus(j.initialized?'정상입니다. V5 기본 데이터가 서버 영구 저장소에 있습니다.':'Vercel Blob 연결은 정상입니다. 이제 아래 “V5 기본 데이터 영구 저장”을 한 번 누르세요.', j.initialized?'ok':'warn');
-  }catch(e){
-    $('storageMetric').textContent='확인 필요'; $('catalogMetric').textContent='-'; setStatus(e.message,'bad');
-  }
-}
-$('probeBtn').onclick=async()=>{
-  setStatus('작은 테스트 파일을 저장하고 다시 읽는 중…');
-  try{
-    const j=await api('/api/index?route=storage-probe',{method:'POST'});
-    $('storageMetric').textContent='연결됨';
-    setStatus(j.message+'\n\n이 테스트 파일은 확인 후 자동 삭제되었습니다.','ok');
-  }catch(e){
-    $('storageMetric').textContent='확인 필요';
-    setStatus(e.message,'bad');
-  }
-};
-$('checkBtn').onclick=check;
-$('nlkBtn').onclick=async()=>{
-  const box=$('nlkStatus');
-  box.className='status warn'; box.textContent='국립중앙도서관 소장자료 API를 확인하는 중…';
-  $('nlkBtn').disabled=true;
-  try{
-    const j=await api('/api/index?route=nlk-probe',{method:'POST'});
-    const x=j.sample||{};
-    box.className='status ok';
-    box.textContent=`${j.version||'버전 미확인'}\n`+j.message+`\n테스트 도서: ${x.title||'-'} / ${x.author||'-'}\n출판사 ${x.publisher||'-'} · 발행년도 ${x.year||'-'} · ISBN ${x.isbn||'-'}\nKDC ${x.kdcCode||'-'} ${x.kdcName||''}`;
-  }catch(e){ box.className='status bad'; box.textContent=e.message; }
-  finally{$('nlkBtn').disabled=false;}
-};
-$('initBtn').onclick=async()=>{
-  if(!confirm('현재 성의고 V5 기본 카탈로그를 서버 영구 저장소에 저장할까요?')) return;
-  $('initBtn').disabled=true; setStatus('8,050종 기본 데이터를 서버에 저장하는 중입니다. 잠시만 기다려 주세요…');
-  try{
-    const j=await api('/api/index?route=storage-init',{method:'POST'});
-    setStatus(j.message+'\n\n이제 브라우저가 닫혀도 이 기본 데이터는 사라지지 않습니다.','ok');
-    await check();
-  }catch(e){setStatus(e.message,'bad');}
-  finally{$('initBtn').disabled=false;}
-};
-
-let lastPreview=null;
-async function syncCall(action){
-  const f=$('dlsFile').files[0]; if(!f) throw new Error('DLS 엑셀 파일을 선택해 주세요.');
-  const s=secret(); if(!s) throw new Error('관리자 암호를 입력해 주세요.');
-  const mode=$('syncMode').value;
-  const r=await fetch(`/api/index?route=catalog-sync&mode=${mode}&action=${action}`,{method:'POST',headers:{'x-admin-secret':s,'content-type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'},body:f});
-  const raw=await r.text(); let j; try{j=JSON.parse(raw);}catch{throw new Error(`서버 응답을 읽지 못했습니다. HTTP ${r.status}\n${raw.slice(0,600)}`)}
-  if(!r.ok) throw new Error((j.message||`HTTP ${r.status}`)+(j.detail?'\n'+j.detail:'')); return j;
-}
-function syncText(j){ const mode=j.mode==='full'?'전체 동기화':'신규도서 추가'; const ex=j.examples||{}; return `${j.version} · ${mode}\n엑셀 ${j.inputRows.toLocaleString()}행 → 결과 ${j.resultTitles.toLocaleString()}종\n신규 ${j.added}종 · 변경 ${j.changed}종 · 제외/삭제 ${j.removed}종 · 동일 ${j.unchanged}종`+(ex.added?.length?`\n신규 예: ${ex.added.join(', ')}`:'')+(ex.changed?.length?`\n변경 예: ${ex.changed.join(', ')}`:'')+(ex.removed?.length?`\n제외/삭제 예: ${ex.removed.join(', ')}`:''); }
-$('previewBtn').onclick=async()=>{ const box=$('syncStatus'); box.className='status warn'; box.textContent='엑셀과 서버 장서를 비교하는 중…'; $('commitSyncBtn').disabled=true; try{const j=await syncCall('preview'); lastPreview=j; box.className='status ok'; box.textContent=j.message+'\n\n'+syncText(j); $('commitSyncBtn').disabled=false;}catch(e){box.className='status bad';box.textContent=e.message;} };
-$('commitSyncBtn').onclick=async()=>{ if(!lastPreview) return; if(!confirm('방금 비교한 장서 변경 내용을 서버 영구 저장소에 반영할까요?')) return; const box=$('syncStatus'); $('commitSyncBtn').disabled=true; box.className='status warn'; box.textContent='서버 장서를 안전하게 갱신하는 중…'; try{const j=await syncCall('commit'); box.className='status ok'; box.textContent=j.message+'\n\n'+syncText(j); lastPreview=null;}catch(e){box.className='status bad';box.textContent=e.message;$('commitSyncBtn').disabled=false;} };
-$('dlsFile').onchange=()=>{lastPreview=null;$('commitSyncBtn').disabled=true;}; $('syncMode').onchange=()=>{lastPreview=null;$('commitSyncBtn').disabled=true;};
-
-
-let metaRunning=false, metaStop=false;
-function setMeta(text,kind='warn'){const b=$('metaStatus');b.className='status '+kind;b.textContent=text;}
-async function metaApi(path,options={}){return api(path,options);}
-async function refreshMeta(){
- try{const j=await metaApi('/api/index?route=metadata-status');
-   $('metaProcessed').textContent=`${(j.processed||0).toLocaleString()} / ${(j.total||0).toLocaleString()}`;
-   $('metaYes').textContent=(j.yes24Found||0).toLocaleString();
-   $('indexReady').textContent=j.indexReady?'완료':'준비 중';
-   setMeta(`전체 ${(j.total||0).toLocaleString()}종 중 ${(j.processed||0).toLocaleString()}종 처리\nYES24 확인 ${(j.yes24Found||0).toLocaleString()}종 · 미확인/ISBN없음 ${(j.yes24Missing||0).toLocaleString()}종 · NLK 보완 ${(j.nlkFallbackFound||0).toLocaleString()}종\n${j.indexReady?'학생용 검색 인덱스 준비 완료':'메타데이터 구축 후 검색 인덱스를 자동 생성합니다.'}`,j.indexReady?'ok':'warn');
-   return j;
- }catch(e){setMeta(e.message,'bad');throw e;}
-}
-$('metaStatusBtn').onclick=refreshMeta;
-$('metaStopBtn').onclick=()=>{metaStop=true;$('metaStopBtn').disabled=true;setMeta('현재 배치가 끝나면 일시정지합니다. 지금까지 결과는 서버에 저장되어 있습니다.','warn');};
-$('metaStartBtn').onclick=async()=>{
- if(metaRunning)return;metaRunning=true;metaStop=false;$('metaStartBtn').disabled=true;$('metaStopBtn').disabled=false;
- try{
-  let st=await refreshMeta();
-  while(!st.completed&&!metaStop){
-    setMeta(`메타데이터 구축 중… ${st.processed.toLocaleString()} / ${st.total.toLocaleString()}종\n현재 배치가 끝날 때마다 서버에 저장됩니다.`,'warn');
-    await metaApi('/api/index?route=metadata-run',{method:'POST'});st=await refreshMeta();
-  }
-  if(st.completed&&!metaStop){
-    setMeta('메타데이터 1차 구축 완료. 검색 인덱스를 안전하게 나누어 재구축합니다…','warn');
-    await metaApi('/api/index?route=metadata-build-index&action=reset',{method:'POST'});
-    let b={processed:0,total:st.total,completed:false};
-    while(!b.completed&&!metaStop){
-      b=await metaApi('/api/index?route=metadata-build-index&action=step',{method:'POST'});
-      setMeta(`검색 인덱스 재구축 중… ${(b.processed||0).toLocaleString()} / ${(b.total||0).toLocaleString()}종\n완료된 구간은 서버에 저장됩니다.`,'warn');
-    }
-    if(!metaStop){
-      const j=await metaApi('/api/index?route=metadata-build-index&action=finalize',{method:'POST'});
-      setMeta(`${j.message}\n학생용 검색 화면을 사용할 수 있습니다.`,`ok`);await refreshMeta();
-    }
-  }
- }catch(e){setMeta(`${e.message}\n중간 결과는 저장되어 있으므로 오류를 해결한 뒤 “통합 구축 시작 / 이어하기”를 다시 누르면 됩니다.`,'bad');}
- finally{metaRunning=false;$('metaStartBtn').disabled=false;$('metaStopBtn').disabled=true;}
-};
-
-</script>
-</body>
-</html>
+<section id="backup" class="panel"><div class="card"><h2>백업·복원</h2><p class="small">학교 설정·로고·기능 설정·추천목록·수서 후보를 ZIP으로 백업합니다. API 키는 포함하지 않습니다.</p><div class="row"><button id="backupDownload" class="blue">백업 ZIP 다운로드</button><input id="backupFile" type="file" accept=".zip" class="field"><button id="backupRestore" class="secondary">백업 복원</button></div><div id="backupStatus" class="status warn" style="margin-top:12px">아직 작업하지 않았습니다.</div></div><div class="card"><h2>변경 이력</h2><button id="historyBtn" class="secondary">이력 불러오기</button><div id="historyList" class="list" style="margin-top:12px"></div></div></section>
+</div><script>
+const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const FEATURES={browse:'둘러보기',recommendations:'지금 함께 읽어볼 책',searchSuggestions:'추천 검색어',relatedTopics:'관련 주제',relatedBooks:'함께 읽어볼 책',newBooks:'새로 들어온 책',eventBanner:'행사 안내'};let currentSettings=null,lastPreview=null,metaRunning=false,metaStop=false;
+function secret(){return $('secret').value.trim()}async function api(path,options={}){const s=secret();if(!s)throw new Error('관리자 암호를 입력해 주세요.');const headers={...(options.headers||{}),'x-admin-secret':s};const r=await fetch(path,{...options,headers});const ct=r.headers.get('content-type')||'';if(!ct.includes('json')){if(!r.ok)throw new Error(`HTTP ${r.status}`);return r;}const j=await r.json();if(!r.ok)throw new Error((j.message||`HTTP ${r.status}`)+(j.detail?'\n'+j.detail:''));return j}function box(id,text,kind='warn'){const e=$(id);e.className='status '+kind;e.textContent=text}function fmtDate(v){return v?String(v).slice(0,10):'-'}function downloadBlob(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===b.dataset.panel));});
+function renderFeatures(f={}){$('featureGrid').innerHTML=Object.entries(FEATURES).map(([k,label])=>`<div class="toggle-box"><label>${label}</label><input id="feat_${k}" type="checkbox" ${f[k]!==false?'checked':''}> 사용</div>`).join('')}
+async function loadSettings(){try{const j=await api('/api/index?route=school-settings');currentSettings=j;$('schoolName').value=j.schoolName||'';$('homeTitle').value=j.homeTitle||'';$('dlsUrl').value=j.dlsUrl||'';$('accentColor').value=j.accentColor||'#4f6ed6';renderFeatures(j.features||{});$('eventTitle').value=j.event?.title||'';$('eventDescription').value=j.event?.description||'';$('eventUrl').value=j.event?.url||'';$('eventEnabled').checked=!!j.event?.enabled;renderLogo(j);box('settingsStatus','현재 설정을 불러왔습니다.','ok');return j}catch(e){box('settingsStatus',e.message,'bad');throw e}}
+function renderLogo(j){$('logoPreview').innerHTML=j?.logoDataUrl?`<img src="${j.logoDataUrl}" alt="학교 로고"><b>${esc(j.schoolName||'')}</b>`:`<span class="small">등록된 로고가 없습니다.</span>`}
+async function saveSettings(extra={}){const features={};Object.keys(FEATURES).forEach(k=>features[k]=$(`feat_${k}`)?.checked!==false);const body={schoolName:$('schoolName').value.trim(),homeTitle:$('homeTitle').value.trim(),dlsUrl:$('dlsUrl').value.trim(),accentColor:$('accentColor').value,features,event:{enabled:$('eventEnabled').checked,title:$('eventTitle').value.trim(),description:$('eventDescription').value.trim(),url:$('eventUrl').value.trim()},...extra};const j=await api('/api/index?route=school-settings',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});currentSettings=j;renderLogo(j);box('settingsStatus','설정을 저장했습니다. 학생 화면을 새로고침하면 반영됩니다.','ok');return j}
+$('settingsLoad').onclick=()=>loadSettings();$('settingsSave').onclick=()=>saveSettings().catch(e=>box('settingsStatus',e.message,'bad'));
+$('logoSave').onclick=async()=>{try{if(!currentSettings)await loadSettings();const f=$('logoFile').files[0];if(!f)throw new Error('로고 이미지를 선택해 주세요.');if(f.size>200*1024)throw new Error('로고는 200KB 이하로 사용해 주세요.');const data=await new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result||''));r.onerror=no;r.readAsDataURL(f)});await saveSettings({logoDataUrl:data})}catch(e){box('settingsStatus',e.message,'bad')}};$('logoDelete').onclick=()=>saveSettings({logoDataUrl:''}).catch(e=>box('settingsStatus',e.message,'bad'));
+async function health(){box('dashMessage','검사 중…');box('healthStatus','검사 중…');try{const j=await api('/api/index?route=health');$('dashStatus').textContent=j.ready?'정상':'확인 필요';$('dashCatalog').textContent=(j.counts.catalog||0).toLocaleString()+'종';$('dashRegression').textContent=`${j.regression.passed}/${j.regression.total}`;$('dashIndex').textContent=(j.counts.index||0).toLocaleString()+'종';$('hTotal').textContent=(j.coverage.total||0).toLocaleString();$('hIsbn').textContent=(j.coverage.isbn||0).toLocaleString();$('hCover').textContent=(j.coverage.cover||0).toLocaleString();$('hIntro').textContent=(j.coverage.intro||0).toLocaleString();$('hToc').textContent=(j.coverage.toc||0).toLocaleString();$('hPoor').textContent=(j.coverage.informationPoor||0).toLocaleString();$('indexBuilt').textContent=fmtDate(j.indexBuiltAt);const env=`YES24 ${j.env.yes24?'키 설정됨':'키 확인'} · NLK ${j.env.nlk?'키 설정됨':'키 확인'} · Gemini ${j.env.gemini?'키 설정됨':'키 확인'}`;const msg=`${j.ready?'✅ 검색 시스템 정상':'⚠ 확인이 필요한 항목이 있습니다.'}\n회귀검사 ${j.regression.passed}/${j.regression.total} 통과 · 실패 ${j.regression.failed}\n${env}`;box('dashMessage',msg,j.ready?'ok':'warn');box('healthStatus',msg,j.ready?'ok':'warn');return j}catch(e){box('dashMessage',e.message,'bad');box('healthStatus',e.message,'bad')}}
+$('healthQuick').onclick=async()=>{await Promise.all([health(),loadAnalytics(false),loadSettings().catch(()=>{})]);};$('healthBtn').onclick=health;
+function syncText(j){const mode=j.mode==='full'?'전체 동기화':'신규도서 추가',ex=j.examples||{};return `${mode}\n엑셀 ${j.inputRows.toLocaleString()}행 → 결과 ${j.resultTitles.toLocaleString()}종\n신규 ${j.added} · 변경 ${j.changed} · 제외/삭제 ${j.removed} · 동일 ${j.unchanged}`+(ex.added?.length?`\n신규 예: ${ex.added.join(', ')}`:'')}
+async function syncCall(action){const f=$('dlsFile').files[0];if(!f)throw new Error('DLS 엑셀 파일을 선택해 주세요.');const r=await fetch(`/api/index?route=catalog-sync&mode=${$('syncMode').value}&action=${action}`,{method:'POST',headers:{'x-admin-secret':secret(),'content-type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'},body:f});const j=await r.json();if(!r.ok)throw new Error((j.message||'오류')+(j.detail?'\n'+j.detail:''));return j}
+$('previewBtn').onclick=async()=>{box('syncStatus','비교 중…');$('commitSyncBtn').disabled=true;try{const j=await syncCall('preview');lastPreview=j;box('syncStatus',j.message+'\n'+syncText(j),'ok');$('commitSyncBtn').disabled=false}catch(e){box('syncStatus',e.message,'bad')}};$('commitSyncBtn').onclick=async()=>{if(!lastPreview||!confirm('방금 확인한 변경 내용을 서버에 반영할까요?'))return;try{const j=await syncCall('commit');box('syncStatus',j.message+'\n'+syncText(j),'ok');lastPreview=null;$('commitSyncBtn').disabled=true}catch(e){box('syncStatus',e.message,'bad')}};
+async function refreshMeta(){const j=await api('/api/index?route=metadata-status');$('metaProcessed').textContent=`${(j.processed||0).toLocaleString()} / ${(j.total||0).toLocaleString()}`;$('metaYes').textContent=(j.yes24Found||0).toLocaleString();$('indexReady').textContent=j.indexReady?'완료':'준비 중';$('indexBuilt').textContent=fmtDate(j.indexBuiltAt);box('metaStatus',`전체 ${(j.total||0).toLocaleString()}종 중 ${(j.processed||0).toLocaleString()}종 처리\nYES24 ${(j.yes24Found||0).toLocaleString()}종 · NLK 보완 ${(j.nlkFallbackFound||0).toLocaleString()}종`,j.indexReady?'ok':'warn');return j}$('metaStatusBtn').onclick=()=>refreshMeta().catch(e=>box('metaStatus',e.message,'bad'));$('metaStopBtn').onclick=()=>{metaStop=true;$('metaStopBtn').disabled=true};$('metaStartBtn').onclick=async()=>{if(metaRunning)return;metaRunning=true;metaStop=false;$('metaStartBtn').disabled=true;$('metaStopBtn').disabled=false;try{let st=await refreshMeta();while(!st.completed&&!metaStop){await api('/api/index?route=metadata-run',{method:'POST'});st=await refreshMeta()}if(st.completed&&!metaStop){await api('/api/index?route=metadata-build-index&action=reset',{method:'POST'});let b={completed:false};while(!b.completed&&!metaStop){b=await api('/api/index?route=metadata-build-index&action=step',{method:'POST'});box('metaStatus',`검색 인덱스 재구축 ${(b.processed||0).toLocaleString()} / ${(b.total||0).toLocaleString()}종`,'warn')}if(!metaStop){const j=await api('/api/index?route=metadata-build-index&action=finalize',{method:'POST'});box('metaStatus',j.message,'ok')}}}catch(e){box('metaStatus',e.message,'bad')}finally{metaRunning=false;$('metaStartBtn').disabled=false;$('metaStopBtn').disabled=true}};$('nlkBtn').onclick=async()=>{try{box('metaStatus','NLK 연결 확인 중…');const j=await api('/api/index?route=nlk-probe',{method:'POST'});box('metaStatus',j.message,'ok')}catch(e){box('metaStatus',e.message,'bad')}};
+function clearRec(){['recId','recName','recDescription','recStart','recEnd'].forEach(id=>$(id).value='');$('recType').value='사서추천';$('recActive').checked=true;$('recFeatured').checked=true;box('recStatus','새 추천목록을 입력하세요.','warn')}$('recNew').onclick=clearRec;
+async function loadRecLists(){const j=await api('/api/index?route=recommendations&mode=admin');const lists=j.lists||[];$('recLists').innerHTML=lists.length?lists.map(l=>`<div class="list-item"><div><b>${esc(l.name)}</b><div class="meta">${esc(l.type)} · 소장 ${(l.items||[]).filter(x=>x.matchStatus==='소장').length}종 · 미소장 ${(l.items||[]).filter(x=>x.matchStatus!=='소장').length}종<br>${l.startDate||'즉시'} ~ ${l.endDate||'종료 없음'} · ${l.active?'활성':'비활성'}${l.featured?' · 첫 화면':''}</div></div><div class="row"><button class="secondary" onclick="editRec('${l.id}')">편집</button><button class="secondary" onclick="deleteRec('${l.id}')">삭제</button></div></div>`).join(''):'<div class="status warn">아직 등록된 추천목록이 없습니다.</div>';window._recs=lists;return j}
+window.editRec=id=>{const l=(window._recs||[]).find(x=>x.id===id);if(!l)return;$('recId').value=l.id;$('recName').value=l.name;$('recType').value=l.type;$('recDescription').value=l.description||'';$('recStart').value=l.startDate||'';$('recEnd').value=l.endDate||'';$('recActive').checked=!!l.active;$('recFeatured').checked=!!l.featured;box('recStatus',`선택됨: ${l.name}\n엑셀 도서 ${(l.items||[]).length}종`,'ok');window.scrollTo({top:0,behavior:'smooth'})};window.deleteRec=async id=>{if(!confirm('이 추천목록을 삭제할까요?'))return;try{await api('/api/index?route=recommendations&action=delete',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id})});await loadRecLists();clearRec()}catch(e){box('recStatus',e.message,'bad')}};
+$('recSave').onclick=async()=>{try{const body={id:$('recId').value||undefined,name:$('recName').value.trim(),type:$('recType').value,description:$('recDescription').value.trim(),startDate:$('recStart').value,endDate:$('recEnd').value,active:$('recActive').checked,featured:$('recFeatured').checked};const j=await api('/api/index?route=recommendations&action=save',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});$('recId').value=j.list.id;box('recStatus',j.message,'ok');await loadRecLists()}catch(e){box('recStatus',e.message,'bad')}};
+$('recTemplate').onclick=async()=>{try{const r=await api('/api/index?route=recommendations&mode=template');downloadBlob(await r.blob(),'추천도서_업로드_양식.xlsx')}catch(e){box('recStatus',e.message,'bad')}};$('recUpload').onclick=async()=>{try{const id=$('recId').value,f=$('recFile').files[0];if(!id)throw new Error('먼저 추천목록을 저장하거나 선택해 주세요.');if(!f)throw new Error('추천도서 엑셀을 선택해 주세요.');box('recStatus','소장자료와 매칭 중…');const r=await fetch(`/api/index?route=recommendations&action=upload&listId=${encodeURIComponent(id)}`,{method:'POST',headers:{'x-admin-secret':secret(),'content-type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'},body:f}),j=await r.json();if(!r.ok)throw new Error(j.message||'업로드 오류');box('recStatus',j.message,'ok');await loadRecLists()}catch(e){box('recStatus',e.message,'bad')}};
+async function loadAnalytics(show=true){try{const j=await api('/api/index?route=analytics-admin&days=30');const top=(j.top||[]).slice(0,5).map(x=>`${x.query} ${x.count}회`).join(' · ')||'아직 검색 기록이 없습니다.';box('dashAnalytics',`최근 30일 검색 ${j.totalQueries}회 · 검색어 ${j.uniqueQueries}종\n${top}`,j.totalQueries?'ok':'warn');if(show){box('analyticsStatus',`검색 ${j.totalQueries}회 · 서로 다른 검색어 ${j.uniqueQueries}종\n결과 없음이 있었던 검색어 ${j.failures.length}종 · 장서 부족 후보 ${j.gaps.length}종`,j.totalQueries?'ok':'warn');$('gapTable').innerHTML=j.gaps.length?`<table class="table"><thead><tr><th>장서 보완 후보</th><th>검색</th><th>평균 결과</th><th></th></tr></thead><tbody>${j.gaps.map(x=>`<tr><td>${esc(x.query)}</td><td>${x.count}회</td><td>${x.avgResults}종</td><td><button class="secondary" onclick='saveGap(${JSON.stringify(x.query)},${x.count},${x.lastTotal})'>수서 후보 저장</button></td></tr>`).join('')}</tbody></table>`:'<div class="small">현재 기준에서 뚜렷한 장서 부족 주제가 없습니다.</div>';}return j}catch(e){if(show)box('analyticsStatus',e.message,'bad')}}$('analyticsBtn').onclick=async()=>{await loadAnalytics(true);await loadAcq()};window.saveGap=async(label,count,total)=>{try{await api('/api/index?route=acquisition-box&action=add',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({type:'검색 수요',label,searchCount:count,currentResults:total})});await loadAcq()}catch(e){alert(e.message)}};
+async function loadAcq(){const j=await api('/api/index?route=acquisition-box&action=list'),items=j.items||[];$('acqList').innerHTML=items.length?items.map(x=>`<div class="list-item"><div><b>${esc(x.label)}</b><div class="meta">${esc(x.type)}${x.searchCount?` · 검색 ${x.searchCount}회`:''}${x.currentResults!=null?` · 현재 ${x.currentResults}종`:''}</div></div><button class="secondary" onclick="removeAcq('${x.id}')">삭제</button></div>`).join(''):'<div class="status warn">저장된 수서 후보가 없습니다.</div>'}window.removeAcq=async id=>{await api('/api/index?route=acquisition-box&action=remove',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id})});await loadAcq()};$('acqExport').onclick=async()=>{try{const r=await api('/api/index?route=acquisition-box&action=export');downloadBlob(await r.blob(),'수서_후보.xlsx')}catch(e){box('analyticsStatus',e.message,'bad')}};
+$('backupDownload').onclick=async()=>{try{const r=await api('/api/index?route=backup');downloadBlob(await r.blob(),'학교도서관_V9_관리자백업.zip');box('backupStatus','백업 ZIP을 만들었습니다.','ok')}catch(e){box('backupStatus',e.message,'bad')}};$('backupRestore').onclick=async()=>{try{const f=$('backupFile').files[0];if(!f)throw new Error('복원할 ZIP 파일을 선택해 주세요.');if(!confirm('현재 관리자 설정을 백업 내용으로 복원할까요?'))return;const r=await fetch('/api/index?route=backup',{method:'POST',headers:{'x-admin-secret':secret(),'content-type':'application/zip'},body:f}),j=await r.json();if(!r.ok)throw new Error(j.message||'복원 오류');box('backupStatus',j.message,'ok');await loadSettings();await loadRecLists()}catch(e){box('backupStatus',e.message,'bad')}};
+$('historyBtn').onclick=async()=>{try{const j=await api('/api/index?route=history'),items=j.items||[];$('historyList').innerHTML=items.length?items.map(x=>`<div class="list-item"><div><b>${esc(x.message)}</b><div class="meta">${fmtDate(x.at)} · ${esc(x.type)}</div></div></div>`).join(''):'<div class="small">아직 변경 이력이 없습니다.</div>'}catch(e){$('historyList').innerHTML=`<div class="status bad">${esc(e.message)}</div>`}};
+renderFeatures({});
+</script></body></html>
