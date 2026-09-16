@@ -3,8 +3,8 @@ import storageProbe from '../lib/routes/storage-probe.mjs';
 import nlkProbe from '../lib/routes/nlk-probe.mjs';
 import storageInit from '../lib/routes/storage-init.mjs';
 import catalogSync from '../lib/routes/catalog-sync.mjs';
-import catalogRead from '../lib/routes/catalog-read.mjs';
 import catalogMaintenance from '../lib/routes/catalog-maintenance.mjs';
+import catalogRead from '../lib/routes/catalog-read.mjs';
 import metadataStatus from '../lib/routes/metadata-status.mjs';
 import metadataRun from '../lib/routes/metadata-run.mjs';
 import metadataBuildIndex from '../lib/routes/metadata-build-index.mjs';
@@ -26,8 +26,8 @@ const ROUTES = {
   'nlk-probe': nlkProbe,
   'storage-init': storageInit,
   'catalog-sync': catalogSync,
-  'catalog-read': catalogRead,
   'catalog-maintenance': catalogMaintenance,
+  'catalog-read': catalogRead,
   'metadata-status': metadataStatus,
   'metadata-run': metadataRun,
   'metadata-build-index': metadataBuildIndex,
