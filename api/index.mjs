@@ -11,6 +11,7 @@ import bookDetail from '../lib/routes/book-detail.mjs';
 import search from '../lib/routes/search.mjs';
 import schoolSettings from '../lib/routes/school-settings.mjs';
 import recommendations from '../lib/routes/recommendations.mjs';
+import newBooks from '../lib/routes/new-books.mjs';
 import discovery from '../lib/routes/discovery.mjs';
 import analyticsLog from '../lib/routes/analytics-log.mjs';
 import analyticsAdmin from '../lib/routes/analytics-admin.mjs';
@@ -33,6 +34,7 @@ const ROUTES = {
   'search': search,
   'school-settings': schoolSettings,
   'recommendations': recommendations,
+  'new-books': newBooks,
   'discovery': discovery,
   'analytics-log': analyticsLog,
   'analytics-admin': analyticsAdmin,
