@@ -1,0 +1,13 @@
+/* Shared book detail renderer for search, recommendations and incoming books. No network calls. */
+window.LibraryBookDetail = (() => {
+ const esc = v => String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const tocLines = v => Array.isArray(v)?v.map(x=>String(x||'').trim()).filter(Boolean):String(v||'').split(/\n|(?=\s*\d{1,2}[.、]\s)/).map(x=>x.trim()).filter(Boolean);
+ function render(b,{backLabel='← 목록으로 돌아가기',backAction='history.back()',reason='',dls='',fit='',pending=false,loadingToc=false}={}){
+  const cover=b.cover||'', intro=b.introduction||b.introPreview||'', toc=tocLines(b.toc),tags=[...(b.topics||[]),...(b.genres||[])].filter(Boolean).slice(0,8);
+  const holdings=Array.isArray(b.holdings)?b.holdings:[];
+  const owned=!pending&&(holdings.length>0||Number(b.copies)>0);
+  const holdingHtml=holdings.length?holdings.map(h=>`<div class="common-holding">청구기호 ${esc(h.callNumber||'확인 중')} · ${esc(h.location||'도서관')}${h.registrationNumber?` · 등록번호 ${esc(h.registrationNumber)}`:''}</div>`).join(''):(owned?`<div class="common-holding">청구기호 ${esc((b.callNumbers||[]).join(', ')||'확인 중')} · ${esc((b.locations||[]).join(', ')||'도서관')} · ${esc(b.copies)}권 소장</div>`:'');
+  return `<button class="detail-back" type="button" onclick="${backAction}">${esc(backLabel)}</button><div class="detail-hero"><div>${cover?`<img class="detail-cover" src="${esc(cover)}" alt="${esc(b.title)} 표지" loading="lazy">`:'<div class="detail-cover common-cover-empty">표지 준비 중</div>'}</div><div><h2 class="detail-title">${esc(b.title)}</h2><div class="detail-meta">${esc(b.author)}${b.publisher?`<br>${esc(b.publisher)}`:''}${b.year?` · ${esc(b.year)}`:''}${b.isbn?`<br>ISBN ${esc(b.isbn)}`:''}</div>${pending?'<span class="common-pending">입고 예정</span>':''}${fit?`<span class="detail-fit">${esc(fit)}</span>`:''}${tags.length?`<div class="detail-tags">${tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>`:''}${reason?`<div class="detail-reason">${esc(reason)}</div>`:''}${dls?`<div class="detail-actions"><a class="dls" href="${esc(dls)}" target="_blank" rel="noopener">우리 도서관 도서 검색</a></div>`:''}${holdingHtml?`<div class="common-holdings"><strong>소장정보</strong>${holdingHtml}</div>`:''}</div></div><section class="detail-section"><h3>책 소개</h3><div class="detail-text">${esc(intro||'책 소개 정보가 없습니다.')}</div></section><section class="detail-section"><h3>목차</h3>${toc.length?`<div class="toc-list">${toc.map(t=>`<div class="toc-item">${esc(t)}</div>`).join('')}</div>`:`<div class="detail-text empty-detail">${loadingToc?'목차 정보를 확인하는 중입니다.':'목차 정보가 없습니다.'}</div>`}</section>`;
+ }
+ return {render};
+})();
